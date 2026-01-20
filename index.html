@@ -9,7 +9,7 @@
 
 <style>
 :root {
-    --bg-color: #0b1021; /* Dark Midnight Blue */
+    --bg-color: #0b1021; 
     --text-color: #2c2c2c;
     --text-light: #fdfdfd;
     --accent-color: #8e7f66;
@@ -26,70 +26,45 @@ body, html {
     color: var(--text-color);
     scroll-behavior: smooth;
     min-height: 100vh;
+    overflow-x: hidden; /* Prevents side-scrolling on mobile */
 }
 
 h1, h2, .nav-btn, .user-label, .section-header {
     font-family: 'Playfair Display', serif;
 }
 
-/* --- UPDATED TEXT CONTAINER STYLE --- */
-.book-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-}
-
-.book-desc-container {
-    max-width: 750px; 
-    margin: 30px auto; 
-    text-align: justify; 
-    line-height: 1.8; 
-    font-size: 1.05rem;
-    padding: 30px; /* Increased padding */
-    color: #f0f0f0; 
-    
-    /* ADDED: Barely noticeable background for readability */
-    background: rgba(0, 0, 0, 0.5); 
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.book-desc-container p {
-    margin-bottom: 20px; 
-}
-
-/* LOGO */
+/* --- LOGO --- */
 .logo-link {
     position: fixed;
     top: 15px;
     left: 25px;
     z-index: 1100;
-    transition: opacity 0.3s;
+    transition: all 0.3s ease;
 }
 .logo-link:hover { opacity: 0.7; }
 .logo-img { height: 50px; }
 
-/* HEADER - Midnight Blue Transparent */
+/* --- HEADER --- */
 header {
     position: fixed;
     top: 0;
     width: 100%;
-    background: rgba(11, 16, 33, 0.67); 
+    background: rgba(11, 16, 33, 0.85); 
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 1000;
     display: flex;
     justify-content: center;
     padding: 20px 0;
+    transition: all 0.3s ease;
 }
 
-nav { display: flex; align-items: center; }
+nav { display: flex; align-items: center; flex-wrap: wrap; justify-content: center; }
 
 nav button {
     background: none;
     border: none;
-    font-size: 1rem;
+    font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin: 0 15px;
@@ -105,44 +80,85 @@ nav button.active {
     border-bottom: 2px solid var(--accent-color);
 }
 
-/* LANGUAGE BUTTON */
-.lang-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    margin-left: 10px;
-}
-.flag-icon {
-    width: 30px; height: 20px;
-    object-fit: cover;
-    border-radius: 2px;
-}
+.lang-btn { background: none; border: none; cursor: pointer; padding: 5px; margin-left: 10px; }
+.flag-icon { width: 30px; height: 20px; object-fit: cover; border-radius: 2px; }
 
-/* CONTENT */
-.main-content { padding-top: 80px; }
-.tab-content { display: none; min-height: calc(100vh - 80px); animation: fadeIn 0.6s ease; }
-.tab-content.active { display: block; }
-
-/* HERO SLIDESHOW */
+/* --- HERO SECTION --- */
 .hero-section {
-    height: 60vh;
+    height: 65vh;
     transition: background-image 1.2s ease-in-out;
     background-size: cover;
-    background-position: top center; 
+    background-position: center; 
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     text-align: center;
     position: relative;
-}
-.hero-section h1 {
-    font-size: 3.5rem;
-    text-shadow: 2px 2px 15px rgba(0,0,0,0.9);
+    padding: 0 20px;
 }
 
-/* POST CONTAINER (Remains White) */
+/* Responsive Scaling for Titles */
+.hero-section h1 {
+    font-size: clamp(2rem, 8vw, 3.5rem); 
+    text-shadow: 2px 2px 15px rgba(0,0,0,0.9);
+    margin: 0;
+}
+
+/* --- MOBILE SPECIFIC ANIMATION & LAYOUT --- */
+@media (max-width: 768px) {
+    /* Move Logo to avoid overlap */
+    .logo-link {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    header {
+        padding-top: 70px; /* Make room for the centered logo above */
+    }
+
+    nav button {
+        margin: 5px;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+
+    /* Slow background pan animation for mobile only */
+    @keyframes mobilePan {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .hero-section {
+        background-size: auto 100%; /* Ensure height fits, width can pan */
+        animation: mobilePan 30s linear infinite;
+    }
+}
+
+/* --- CONTENT CONTAINERS --- */
+.book-item { display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+.book-desc-container {
+    max-width: 750px; 
+    margin: 30px auto; 
+    text-align: justify; 
+    line-height: 1.8; 
+    font-size: 1.05rem;
+    padding: 30px;
+    color: #f0f0f0; 
+    background: rgba(0, 0, 0, 0.6); 
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.main-content { padding-top: 100px; }
+.tab-content { display: none; min-height: calc(100vh - 80px); animation: fadeIn 0.6s ease; }
+.tab-content.active { display: block; }
+
+/* --- POST CONTAINER - ALWAYS VISIBLE --- */
 .post-container {
     width: 90%;
     max-width: 900px;
@@ -155,12 +171,68 @@ nav button.active {
     z-index: 10;
 }
 
-#admin-editor-zone { display: none; margin-bottom: 40px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
-textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-size: 1.2rem; padding: 15px; border-radius: 8px; outline: none; font-family: inherit; }
+/* Admin editor is hidden by default */
+#admin-editor-zone { 
+    display: none; 
+    margin-bottom: 40px; 
+    border-bottom: 2px solid #f0f0f0; 
+    padding-bottom: 20px; 
+}
 
-.feed-item { border-bottom: 1px solid #f0f0f0; padding: 25px 0; }
-.user-label { font-weight: 700; font-size: 1.2rem; color: var(--text-color); }
-.timestamp { color: #888; font-size: 0.8rem; display: block; margin-bottom: 10px; }
+textarea#postInput { 
+    width: 100%; 
+    height: 120px; 
+    border: 1px solid #eee; 
+    font-size: 1.2rem; 
+    padding: 15px; 
+    border-radius: 8px; 
+    outline: none; 
+    font-family: inherit; 
+}
+
+.feed-item { 
+    border-bottom: 1px solid #f0f0f0; 
+    padding: 25px 0; 
+    position: relative;
+}
+
+.user-label { 
+    font-weight: 700; 
+    font-size: 1.2rem; 
+    color: var(--text-color); 
+}
+
+.timestamp { 
+    color: #888; 
+    font-size: 0.8rem; 
+    display: block; 
+    margin-bottom: 10px; 
+}
+
+/* Admin buttons styling */
+.admin-buttons {
+    margin-top: 15px;
+    display: none; /* Hidden by default */
+}
+
+.admin-buttons button {
+    margin-right: 10px;
+    padding: 5px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.delete-btn {
+    background-color: #ff4444;
+    color: white;
+}
+
+.edit-btn {
+    background-color: #4CAF50;
+    color: white;
+}
 
 /* BOOKS - Starry Background */
 #book1, #book2 {
@@ -169,16 +241,19 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
     background-size: cover;
     background-position: center;
 }
+
 .book-wrapper {
-    padding: 150px 20px 80px;
-    display: flex; gap: 60px; justify-content: center; flex-wrap: wrap; text-align: center;
+    padding: 100px 20px 80px;
+    display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; text-align: center;
     color: white;
 }
+
 .book-img {
-    width: 300px; height: 450px; object-fit: cover; border-radius: 8px; 
+    width: 280px; height: 420px; object-fit: cover; border-radius: 8px; 
     cursor: pointer; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
     transition: transform 0.4s ease;
 }
+
 .book-img:hover { transform: scale(1.02); }
 
 .download-btn {
@@ -186,31 +261,81 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
     color: white; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;
 }
 
-/* FOOTER - Black */
-.site-footer {
-    background: #000000; color: white; padding: 80px 20px; text-align: center;
+.site-footer { 
+    background: #000000; 
+    color: white; 
+    padding: 60px 20px; 
+    text-align: center; 
+    position: relative;
 }
 
-/* LOGIN UI */
-.ghost-login-area { position: fixed; bottom: 20px; right: 20px; width: 15px; height: 15px; background: transparent; z-index: 2000; }
-.login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 99999; }
-.login-box { background: white; padding: 40px; border-radius: 16px; text-align: center; width: 350px; }
+/* GHOST LOGIN AREA - AT VERY BOTTOM OF PAGE */
+.ghost-login-area { 
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 20px; 
+    height: 20px; 
+    background: transparent; 
+    z-index: 2000; 
+    cursor: pointer;
+}
+
+.login-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.85); 
+    display: none; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 99999; 
+}
+
+.login-box { 
+    background: white; 
+    padding: 40px; 
+    border-radius: 16px; 
+    text-align: center; 
+    width: 90%; 
+    max-width: 350px; 
+}
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Translations Styles */
-.translate-toggle { background: none; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--accent-color); margin-top: 5px; }
-.translated-content { margin-top: 10px; padding: 10px; background: #f9f9f9; border-left: 3px solid var(--accent-color); font-style: italic; display: none; }
+.translate-toggle { 
+    background: none; 
+    border: none; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    cursor: pointer; 
+    color: var(--accent-color); 
+    margin-top: 10px; 
+    padding: 5px 0;
+}
+
+.translated-content { 
+    margin-top: 10px; 
+    padding: 15px; 
+    background: #f9f9f9; 
+    border-left: 3px solid var(--accent-color); 
+    font-style: italic; 
+    display: none;
+    border-radius: 0 8px 8px 0;
+}
+
+.post-content {
+    margin-top: 10px;
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
 </style>
 </head>
 
 <body>
 
-<a class="logo-link" href="https://robertking2002.github.io/sanducroitoru/">
-    <img src="Logo.png" class="logo-img">
+<a class="logo-link" href="https://robertking2002.github.io/sanducroitoru/" target="_blank">
+    <img src="Logo.png" class="logo-img" alt="Logo">
 </a>
-
-<div class="ghost-login-area" onclick="handleGhostClick()"></div>
 
 <div id="login-modal" class="login-overlay">
     <div class="login-box">
@@ -224,7 +349,7 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
     </div>
 </div>
 
-<header>
+<header id="site-header">
     <nav>
         <button class="nav-btn active" onclick="showTab('home',this)" id="nav-home">Home</button>
         <button class="nav-btn" onclick="showTab('book1',this)" id="nav-book1">Faith Diagnosis - RO</button>
@@ -242,13 +367,16 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
         </div>
         
         <div class="post-container">
+            <!-- Admin editor - hidden by default, shown when admin logs in -->
             <div id="admin-editor-zone">
                 <span class="user-label">Sandu Croitoru</span>
-                <textarea id="postInput"></textarea>
+                <textarea id="postInput" placeholder="Share your thoughts..."></textarea>
                 <div style="text-align:right; margin-top:10px;">
                     <button onclick="submitPost()" id="post-button" style="padding:10px 30px; background:var(--accent-color); color:white; border:none; border-radius:20px; cursor:pointer;">Post</button>
                 </div>
             </div>
+            
+            <!-- Author's Thoughts section - ALWAYS VISIBLE -->
             <h2 id="latest-updates">Author's Thoughts</h2>
             <div id="feed"></div>
         </div>
@@ -256,6 +384,8 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
         <footer class="site-footer">
             <h2 id="footer-title">Communication</h2>
             <p>sandusilvia.croitoru@gmail.com</p>
+            <!-- Ghost login area moved to bottom of page -->
+            <div class="ghost-login-area" onclick="handleGhostClick()"></div>
         </footer>
     </div>
 
@@ -265,10 +395,10 @@ textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-si
                 <img src="Cover1.jpg" id="img-b1" class="book-img" onclick="toggleCover('img-b1', 'Cover1.jpg', 'Cover3.jpg')">
                 <h2 id="book1-title" style="margin-top: 30px; margin-bottom: 10px;">Diagnosis of Faith - RO</h2>
                 <div class="book-desc-container">
-                    <p id="book1-desc-p1">Loading text...</p>
-                    <p id="book1-desc-p2"></p>
+                    <p id="book1-desc-p1">Faith is the algorithm of those who cannot perceive and deepen the truth through knowing and living it, and sums up only the aprioric uncertainty of the credal illusion of what the truth symbolizes or embodies. It is one thing for Jesus to become an accepted truth for you through your faith in Him and another to merge with the truth of Jesus from the perspective of the transhumance of the merging of one's own being through knowing Him. It is one thing to believe in the truth and another to transcend the truth by becoming an integral part of it through the Christ equation of the spiritual quantum metamorphosis of the being in the vibration of the phrase: "I am the truth!"</p>
+                    <p id="book1-desc-p2">You cannot live, feel or know God through faith. Faith is the prerogative of ignorance. Praying to the one you do not know... the truth is not revealed to you through faith in Him but through knowing Him, and you continue to pray to the one you do not know. Do not expect the revelation of the truth through faith, at most the discovery of your own self, and that only if the faith you have, you have for yourself. Accepting a group faith transforms you into a spiritual semi-learned person; refusing group faith and aligning yourself with your own faith transforms you gradually into a learned person of semi-acquired truths. You were told that if you have faith as small as a mustard seed you will move mountains. Well you have it, so how many mountains have you moved with it? I do not ask you to move mountains, but put that mustard seed in front of you and through the faith you have: Move it! If it hasn't moved then you have a major problem with your own faith. The solution? Fulfillment. Jesus came to fulfill the Law, you fulfill your faith through knowledge, otherwise the Kingdom of Heaven will remain an unknown and untouched nimbus both literally and figuratively.</p>
                 </div>
-                <a href="Diagnoza_Credintei.pdf" target="_blank" class="download-btn" id="book1-btn">BOOK</a>
+                <a href="Diagnoza_Credintei.pdf" target="_blank" class="download-btn" id="book1-btn">VIEW BOOK</a>
             </div>
         </div>
         <footer class="site-footer"><h2>Communication</h2><p>sandusilvia.croitoru@gmail.com</p></footer>
@@ -303,13 +433,11 @@ function startSlideshow() {
     }, 5000);
 }
 
-// --- COVER TOGGLE LOGIC ---
 function toggleCover(id, front, back) {
     const img = document.getElementById(id);
     img.src = img.src.includes(front) ? back : front;
 }
 
-// --- TAB LOGIC ---
 function showTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -318,7 +446,6 @@ function showTab(tabId, btn) {
     window.scrollTo(0,0);
 }
 
-// --- TRANSLATIONS UI STRINGS ---
 const translations = {
     en: { 
         "nav-home": "Home", 
@@ -331,7 +458,7 @@ const translations = {
         "book1-title": "Faith Diagnosis - RO", 
         "book2-title": "Faith Diagnosis - GR", 
         "book1-btn": "VIEW BOOK",
-        "book2-btn": "BOOK",
+        "book2-btn": "BOOK", 
         "translate-to": "Translate to English", 
         "flag": "gb",
         "book1-desc-p1": "Faith is the algorithm of those who cannot perceive and deepen the truth through knowing and living it, and sums up only the aprioric uncertainty of the credal illusion of what the truth symbolizes or embodies. It is one thing for Jesus to become an accepted truth for you through your faith in Him and another to merge with the truth of Jesus from the perspective of the transhumance of the merging of one's own being through knowing Him. It is one thing to believe in the truth and another to transcend the truth by becoming an integral part of it through the Christ equation of the spiritual quantum metamorphosis of the being in the vibration of the phrase: \"I am the truth!\"",
@@ -349,7 +476,7 @@ const translations = {
         "book1-title": "Diagnoza Credinței - RO", 
         "book2-title": "Diagnoza Credinței - GR", 
         "book1-btn": "VEZI CARTEA",
-        "book2-btn": "CARTE",
+        "book2-btn": "CARTE", 
         "translate-to": "Original", 
         "flag": "ro",
         "book1-desc-p1": "Credința este algoritmul celor ce nu pot percepe și aprofunda adevărul prin cunoașterea și trăirea acestuia și se rezumă doar la incertidudinea apriorică a iluziei crezuale a ceea ce adevărul simbolizează sau intruchipează. Una e să devină Iisus un adevăr acceptat pentru tine prin credința ta in El si alta e să fuzionezi cu adevărul lui Iisus din prisma transhumanței contopirii propriei ființe prin cunoașterea acestuia. Una e să crezi in adevăr și alta e să trancenzi adevărul devenind parte integrantă al acestuia prin ecuația hristică a metamorfozării cuanticii spirituale a ființei in vibrația frazei : \"Eu sunt adevărul!\"",
@@ -367,7 +494,7 @@ const translations = {
         "book1-title": "Διάγνωση Πίστης - RO", 
         "book2-title": "Διάγνωση Πίστης - GR", 
         "book1-btn": "ΠΡΟΒΟΛΗ ΒΙΒΛΙΟΥ",
-        "book2-btn": "ΒΙΒΛΙΟ",
+        "book2-btn": "ΒΙΒΛΙΟ", 
         "translate-to": "Μετάφραση στα Ελληνικά", 
         "flag": "gr",
         "book1-desc-p1": "Η πίστη είναι ο αλγόριθμος εκείνων που δεν μπορούν να αντιληφθούν και να εμβαθύνουν στην αλήθεια μέσω της γνώσης και της βίωσής της, και συνοψίζεται μόνο στην a priori αβεβαιότητα της δογματικής ψευδαίσθησης του τι συμβολίζει ή ενσαρκώνει η αλήθεια. Άλλο είναι να γίνει ο Ιησούς μια αποδεκτή αλήθεια για σένα μέσω της πίστης σου σε Αυτόν και άλλο να συγχωνευτείς με την αλήθεια του Ιησού από την πρίσμα της υπερβατικής συγχώνευσης της ίδιας της ύπαρξης μέσω της γνώσης Του. Άλλο είναι να πιστεύεις στην αλήθεια και άλλο να υπερβαίνεις την αλήθεια γίνοντας αναπόσπαστο μέρος της μέσω της χριστικής εξίσωσης της πνευματικής κβαντικής μεταμόρφωσης της ύπαρξης στη δόνηση της φράσης: \"Εγώ είμαι η αλήθεια!\"",
@@ -378,6 +505,8 @@ const translations = {
 
 let currentLang = 'en';
 const langOrder = ['en', 'gr', 'ro'];
+let adminMode = false;
+let editingPostId = null;
 
 function cycleLanguage() {
     let idx = (langOrder.indexOf(currentLang) + 1) % langOrder.length;
@@ -392,25 +521,28 @@ function applyLang(lang) {
         const el = document.getElementById(key);
         if (el) el.textContent = t[key];
     }
-    // Reload feed to update post translate buttons (and hide them if RO)
     renderFeed();
 }
 
-// --- INIT LANGUAGE ON LOAD ---
 window.onload = () => {
     startSlideshow();
     applyLang(currentLang);
+    renderFeed(); // Load posts immediately on page load
 };
-
-// --- POST LOGIC ---
-let adminMode = false;
 
 function renderFeed() {
     const feed = document.getElementById('feed');
     feed.innerHTML = '';
     const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-    
     const btnDisplay = currentLang === 'ro' ? 'none' : 'inline-block';
+    
+    if (posts.length === 0) {
+        // Show welcome message if no posts exist
+        feed.innerHTML = `<div class="feed-item" style="text-align: center; color: #666; font-style: italic;">
+            No thoughts shared yet. Check back soon for updates from the author.
+        </div>`;
+        return;
+    }
     
     posts.forEach(p => {
         const div = document.createElement('div');
@@ -418,10 +550,13 @@ function renderFeed() {
         div.innerHTML = `
             <span class="user-label">Sandu Croitoru</span>
             <span class="timestamp">${p.date}</span>
-            <div id="txt-${p.id}">${p.text}</div>
+            <div class="post-content" id="txt-${p.id}">${p.text}</div>
             <button class="translate-toggle" style="display:${btnDisplay}" onclick="handleTranslate(${p.id}, '${encodeURIComponent(p.text)}')">${translations[currentLang]['translate-to']}</button>
             <div class="translated-content" id="trans-${p.id}"></div>
-            ${adminMode ? `<div style="margin-top:10px;"><button onclick="deletePost(${p.id})" style="color:red; background:none; border:none; cursor:pointer;">Delete</button></div>` : ''}
+            <div class="admin-buttons" id="admin-buttons-${p.id}" style="display:${adminMode ? 'block' : 'none'}">
+                <button class="delete-btn" onclick="deletePost(${p.id})">Delete</button>
+                <button class="edit-btn" onclick="editPost(${p.id})">Edit</button>
+            </div>
         `;
         feed.appendChild(div);
     });
@@ -430,8 +565,27 @@ function renderFeed() {
 function submitPost() {
     const val = document.getElementById('postInput').value;
     if(!val.trim()) return;
+    
     const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-    posts.unshift({ id: Date.now(), text: val, date: new Date().toLocaleString() });
+    
+    if (editingPostId) {
+        // Editing existing post
+        const postIndex = posts.findIndex(p => p.id === editingPostId);
+        if (postIndex !== -1) {
+            posts[postIndex].text = val;
+            posts[postIndex].date = new Date().toLocaleString();
+        }
+        editingPostId = null;
+        document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
+    } else {
+        // Creating new post
+        posts.unshift({ 
+            id: Date.now(), 
+            text: val, 
+            date: new Date().toLocaleString() 
+        });
+    }
+    
     localStorage.setItem('sandu_posts', JSON.stringify(posts));
     document.getElementById('postInput').value = '';
     renderFeed();
@@ -443,50 +597,66 @@ function deletePost(id) {
     renderFeed();
 }
 
-// --- UPDATED TRANSLATION LOGIC ---
+function editPost(id) {
+    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
+    const post = posts.find(p => p.id === id);
+    if (post) {
+        document.getElementById('postInput').value = post.text;
+        editingPostId = id;
+        document.getElementById('post-button').textContent = 'Update';
+        document.getElementById('postInput').focus();
+    }
+}
+
 async function handleTranslate(id, text) {
     const box = document.getElementById(`trans-${id}`);
-    if(box.style.display === 'block') { box.style.display = 'none'; return; }
+    if(box.style.display === 'block') { 
+        box.style.display = 'none'; 
+        return; 
+    }
     
-    box.textContent = "Loading translation...";
+    box.textContent = "Loading...";
     box.style.display = 'block';
     
     try {
-        let target = 'en';
-        if (currentLang === 'gr') target = 'el'; 
-        
+        let target = currentLang === 'gr' ? 'el' : 'en';
         const res = await fetch(`https://api.mymemory.translated.net/get?q=${text}&langpair=ro|${target}`);
         const data = await res.json();
-        
-        if(data.responseData.translatedText) {
-            box.textContent = data.responseData.translatedText;
-        } else {
-            box.textContent = "Translation unavailable.";
-        }
-    } catch { box.textContent = "Error loading translation."; }
+        box.textContent = data.responseData.translatedText || "Unavailable";
+    } catch { box.textContent = "Error."; }
 }
 
-// --- ADMIN LOGIC ---
 function handleGhostClick() {
-    if(adminMode) { adminMode = false; document.getElementById('admin-editor-zone').style.display='none'; renderFeed(); alert("Viewer Mode"); }
-    else { document.getElementById('login-modal').style.display='flex'; }
+    if(adminMode) { 
+        // Logout silently
+        adminMode = false; 
+        document.getElementById('admin-editor-zone').style.display='none'; 
+        renderFeed();
+    } else { 
+        // Show login modal
+        document.getElementById('login-modal').style.display='flex'; 
+    }
 }
 
 function attemptLogin() {
     const u = document.getElementById('login-username').value;
     const p = document.getElementById('login-password').value;
+    
     if(u === "admin" && p === "12345") {
         adminMode = true;
         document.getElementById('admin-editor-zone').style.display='block';
-        closeLogin();
+        closeLogin(); 
         renderFeed();
-    } else { alert("Wrong"); }
+    } else { 
+        closeLogin();
+    }
 }
 
-function closeLogin() { document.getElementById('login-modal').style.display='none'; }
+function closeLogin() { 
+    document.getElementById('login-modal').style.display='none'; 
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+}
 </script>
 </body>
 </html>
-
-
-
