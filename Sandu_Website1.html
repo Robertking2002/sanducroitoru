@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandu Croitoru's Sanctuary</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg-color: #0b1021; /* Dark Midnight Blue */
+    --text-color: #2c2c2c;
+    --text-light: #fdfdfd;
+    --accent-color: #8e7f66;
+    --border-color: #e1e8ed;
+}
+
+* { box-sizing: border-box; }
+
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    scroll-behavior: smooth;
+    min-height: 100vh;
+}
+
+h1, h2, .nav-btn, .user-label, .section-header {
+    font-family: 'Playfair Display', serif;
+}
+
+/* --- UPDATED TEXT CONTAINER STYLE --- */
+.book-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.book-desc-container {
+    max-width: 750px; 
+    margin: 30px auto; 
+    text-align: justify; 
+    line-height: 1.8; 
+    font-size: 1.05rem;
+    padding: 30px; /* Increased padding */
+    color: #f0f0f0; 
+    
+    /* ADDED: Barely noticeable background for readability */
+    background: rgba(0, 0, 0, 0.5); 
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.book-desc-container p {
+    margin-bottom: 20px; 
+}
+
+/* LOGO */
+.logo-link {
+    position: fixed;
+    top: 15px;
+    left: 25px;
+    z-index: 1100;
+    transition: opacity 0.3s;
+}
+.logo-link:hover { opacity: 0.7; }
+.logo-img { height: 50px; }
+
+/* HEADER - Midnight Blue Transparent */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: rgba(11, 16, 33, 0.67); 
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+nav { display: flex; align-items: center; }
+
+nav button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 15px;
+    cursor: pointer;
+    color: var(--text-light); 
+    padding: 5px 10px;
+    transition: color 0.3s;
+}
+
+nav button:hover { color: var(--accent-color); }
+nav button.active {
+    color: var(--accent-color);
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* LANGUAGE BUTTON */
+.lang-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 10px;
+}
+.flag-icon {
+    width: 30px; height: 20px;
+    object-fit: cover;
+    border-radius: 2px;
+}
+
+/* CONTENT */
+.main-content { padding-top: 80px; }
+.tab-content { display: none; min-height: calc(100vh - 80px); animation: fadeIn 0.6s ease; }
+.tab-content.active { display: block; }
+
+/* HERO SLIDESHOW */
+.hero-section {
+    height: 60vh;
+    transition: background-image 1.2s ease-in-out;
+    background-size: cover;
+    background-position: top center; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    position: relative;
+}
+.hero-section h1 {
+    font-size: 3.5rem;
+    text-shadow: 2px 2px 15px rgba(0,0,0,0.9);
+}
+
+/* POST CONTAINER (Remains White) */
+.post-container {
+    width: 90%;
+    max-width: 900px;
+    margin: -50px auto 50px;
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 10;
+}
+
+#admin-editor-zone { display: none; margin-bottom: 40px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px; }
+textarea#postInput { width: 100%; height: 120px; border: 1px solid #eee; font-size: 1.2rem; padding: 15px; border-radius: 8px; outline: none; font-family: inherit; }
+
+.feed-item { border-bottom: 1px solid #f0f0f0; padding: 25px 0; }
+.user-label { font-weight: 700; font-size: 1.2rem; color: var(--text-color); }
+.timestamp { color: #888; font-size: 0.8rem; display: block; margin-bottom: 10px; }
+
+/* BOOKS - Starry Background */
+#book1, #book2 {
+    background-image: url('Stars.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+}
+.book-wrapper {
+    padding: 150px 20px 80px;
+    display: flex; gap: 60px; justify-content: center; flex-wrap: wrap; text-align: center;
+    color: white;
+}
+.book-img {
+    width: 300px; height: 450px; object-fit: cover; border-radius: 8px; 
+    cursor: pointer; box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+    transition: transform 0.4s ease;
+}
+.book-img:hover { transform: scale(1.02); }
+
+.download-btn {
+    margin-top: 30px; padding: 15px 40px; background: var(--accent-color);
+    color: white; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;
+}
+
+/* FOOTER - Black */
+.site-footer {
+    background: #000000; color: white; padding: 80px 20px; text-align: center;
+}
+
+/* LOGIN UI */
+.ghost-login-area { position: fixed; bottom: 20px; right: 20px; width: 15px; height: 15px; background: transparent; z-index: 2000; }
+.login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 99999; }
+.login-box { background: white; padding: 40px; border-radius: 16px; text-align: center; width: 350px; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Translations Styles */
+.translate-toggle { background: none; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--accent-color); margin-top: 5px; }
+.translated-content { margin-top: 10px; padding: 10px; background: #f9f9f9; border-left: 3px solid var(--accent-color); font-style: italic; display: none; }
+</style>
+</head>
+
+<body>
+
+<a class="logo-link" href="https://www.google.com" target="_blank">
+    <img src="logo.png" class="logo-img" alt="Logo">
+</a>
+
+<div class="ghost-login-area" onclick="handleGhostClick()"></div>
+
+<div id="login-modal" class="login-overlay">
+    <div class="login-box">
+        <h2 id="login-title">Admin Access</h2>
+        <input type="text" id="login-username" placeholder="Username" style="width:100%; padding:10px; margin-bottom:10px;">
+        <input type="password" id="login-password" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="attemptLogin()" style="flex:1; padding:10px; background:var(--accent-color); color:white; border:none;">Login</button>
+            <button onclick="closeLogin()" style="flex:1; padding:10px; background:#eee; border:none;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<header>
+    <nav>
+        <button class="nav-btn active" onclick="showTab('home',this)" id="nav-home">Home</button>
+        <button class="nav-btn" onclick="showTab('book1',this)" id="nav-book1">Faith Diagnosis - RO</button>
+        <button class="nav-btn" onclick="showTab('book2',this)" id="nav-book2">Faith Diagnosis - GR</button>
+        <button class="lang-btn" onclick="cycleLanguage()">
+            <img src="https://flagcdn.com/w40/gb.png" id="flag-icon" class="flag-icon">
+        </button>
+    </nav>
+</header>
+
+<div class="main-content">
+    <div id="home" class="tab-content active">
+        <div class="hero-section" id="hero-slideshow">
+            <h1 id="hero-title">Sandu Croitoru's Sanctuary</h1>
+        </div>
+        
+        <div class="post-container">
+            <div id="admin-editor-zone">
+                <span class="user-label">Sandu Croitoru</span>
+                <textarea id="postInput"></textarea>
+                <div style="text-align:right; margin-top:10px;">
+                    <button onclick="submitPost()" id="post-button" style="padding:10px 30px; background:var(--accent-color); color:white; border:none; border-radius:20px; cursor:pointer;">Post</button>
+                </div>
+            </div>
+            <h2 id="latest-updates">Author's Thoughts</h2>
+            <div id="feed"></div>
+        </div>
+        
+        <footer class="site-footer">
+            <h2 id="footer-title">Communication</h2>
+            <p>sandusilvia.croitoru@gmail.com</p>
+        </footer>
+    </div>
+
+    <div id="book1" class="tab-content">
+        <div class="book-wrapper">
+            <div class="book-item">
+                <img src="Cover1.jpg" id="img-b1" class="book-img" onclick="toggleCover('img-b1', 'Cover1.jpg', 'Cover3.jpg')">
+                <h2 id="book1-title" style="margin-top: 30px; margin-bottom: 10px;">Diagnosis of Faith - RO</h2>
+                <div class="book-desc-container">
+                    <p id="book1-desc-p1">Loading text...</p>
+                    <p id="book1-desc-p2"></p>
+                </div>
+                <a href="Diagnoza_Credintei.pdf" target="_blank" class="download-btn" id="book1-download">BOOK</a>
+            </div>
+        </div>
+        <footer class="site-footer"><h2>Communication</h2><p>sandusilvia.croitoru@gmail.com</p></footer>
+    </div>
+
+    <div id="book2" class="tab-content">
+        <div class="book-wrapper">
+            <div class="book-item">
+                <img src="Cover2.jpg" id="img-b2" class="book-img" onclick="toggleCover('img-b2', 'Cover2.jpg', 'Cover4.jpg')">
+                <h2 id="book2-title" style="margin-top: 30px; margin-bottom: 10px;">Faith Diagnosis - GR</h2>
+                <div class="book-desc-container">
+                    <p id="book2-desc-p1">Comming Sooon!</p>
+                </div>
+            </div>
+        </div>
+        <footer class="site-footer"><h2>Communication</h2><p>sandusilvia.croitoru@gmail.com</p></footer>
+    </div>
+</div>
+
+<script>
+// --- SLIDESHOW LOGIC ---
+const slides = ['Background1.jpg', 'Background2.jpg', 'Background3.jpg'];
+let slideIdx = 0;
+
+function startSlideshow() {
+    const hero = document.getElementById('hero-slideshow');
+    hero.style.backgroundImage = `url('${slides[0]}')`;
+    setInterval(() => {
+        slideIdx = (slideIdx + 1) % slides.length;
+        hero.style.backgroundImage = `url('${slides[slideIdx]}')`;
+    }, 5000);
+}
+
+// --- COVER TOGGLE LOGIC ---
+function toggleCover(id, front, back) {
+    const img = document.getElementById(id);
+    img.src = img.src.includes(front) ? back : front;
+}
+
+// --- TAB LOGIC ---
+function showTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo(0,0);
+}
+
+// --- TRANSLATIONS UI STRINGS ---
+const translations = {
+    en: { 
+        "nav-home": "Home", 
+        "nav-book1": "Faith Diagnosis - RO", 
+        "nav-book2": "Faith Diagnosis - GR", 
+        "hero-title": "Sandu Croitoru's Sanctuary", 
+        "latest-updates": "Author's Thoughts", 
+        "post-button": "Post", 
+        "footer-title": "Communication", 
+        "book1-title": "Faith Diagnosis - RO", 
+        "book2-title": "Faith Diagnosis - GR", 
+        "translate-to": "Translate to English", 
+        "flag": "gb",
+        "book1-desc-p1": "Faith is the algorithm of those who cannot perceive and deepen the truth through knowing and living it, and sums up only the aprioric uncertainty of the credal illusion of what the truth symbolizes or embodies. It is one thing for Jesus to become an accepted truth for you through your faith in Him and another to merge with the truth of Jesus from the perspective of the transhumance of the merging of one's own being through knowing Him. It is one thing to believe in the truth and another to transcend the truth by becoming an integral part of it through the Christ equation of the spiritual quantum metamorphosis of the being in the vibration of the phrase: \"I am the truth!\"",
+        "book1-desc-p2": "You cannot live, feel or know God through faith. Faith is the prerogative of ignorance. Praying to the one you do not know... the truth is not revealed to you through faith in Him but through knowing Him, and you continue to pray to the one you do not know. Do not expect the revelation of the truth through faith, at most the discovery of your own self, and that only if the faith you have, you have for yourself. Accepting a group faith transforms you into a spiritual semi-learned person; refusing group faith and aligning yourself with your own faith transforms you gradually into a learned person of semi-acquired truths. You were told that if you have faith as small as a mustard seed you will move mountains. Well you have it, so how many mountains have you moved with it? I do not ask you to move mountains, but put that mustard seed in front of you and through the faith you have: Move it! If it hasn't moved then you have a major problem with your own faith. The solution? Fulfillment. Jesus came to fulfill the Law, you fulfill your faith through knowledge, otherwise the Kingdom of Heaven will remain an unknown and untouched nimbus both literally and figuratively.",
+        "book2-desc-p1": "Comming Soon!"
+    },
+    ro: { 
+        "nav-home": "Acasă", 
+        "nav-book1": "Diagnoza Credinței - RO", 
+        "nav-book2": "Diagnoza Credinței - GR", 
+        "hero-title": "Sanctuarul lui Croitoru Sandu", 
+        "latest-updates": "Gândurile autorului", 
+        "post-button": "Postează", 
+        "footer-title": "Comunicare", 
+        "book1-title": "Diagnoza Credinței - RO", 
+        "book2-title": "Diagnoza Credinței - GR", 
+        "translate-to": "Original", 
+        "flag": "ro",
+        "book1-desc-p1": "Credința este algoritmul celor ce nu pot percepe și aprofunda adevărul prin cunoașterea și trăirea acestuia și se rezumă doar la incertidudinea apriorică a iluziei crezuale a ceea ce adevărul simbolizează sau intruchipează. Una e să devină Iisus un adevăr acceptat pentru tine prin credința ta in El si alta e să fuzionezi cu adevărul lui Iisus din prisma transhumanței contopirii propriei ființe prin cunoașterea acestuia. Una e să crezi in adevăr și alta e să trancenzi adevărul devenind parte integrantă al acestuia prin ecuația hristică a metamorfozării cuanticii spirituale a ființei in vibrația frazei : \"Eu sunt adevărul!\"",
+        "book1-desc-p2": "Pe Dumnezeul nu-l poți trăi, simți sau cunoaște prin credință. Credința este apanajul necunoașterii. Rugându-te celui ce nu cunoști... adevărul nu ți se revelează prin credința in El ci prin cunoașterea acestuia iar tu continui să te rogi celui ce nu cunoști. Nu aștepta revelația adevărului prin credință, cel mult descoperirea propriului sine și asta doar dacă credința pe care o ai, o ai pentru tine însuți. Acceptând o credință de grup te transformi intr-un semidoct spiritual, refuzând credința de grup si aliniindu-te la credința proprie te transformi treptat intr-un doct al unor adevăruri seminsusite. Ți sa spus că dacă ai credință cât un bob de muștar vei muta munții. Ei bine o ai, atunci câți munți ai mutat cu ea? Eu nu îți cer să muți munții ci pune acel bob de muștar in fața ta și prin credința pe care o ai : Mută-l! Dacă nu sa mutat atunci ai o problemă majoră cu propria-ti credință. Soluția? Implinirea. Iisus a venit să împlinească Legea, tu implinește-ți credința prin cunoaștere, altfel Împărăția cerurilor va rămâne un nimb necunoscut și neatins atât la propriu cât și la figurat.",
+        "book2-desc-p1": "În curând!"
+    },
+    gr: { 
+        "nav-home": "Αρχική", 
+        "nav-book1": "Διάγνωση Πίστης - RO", 
+        "nav-book2": "Διάγνωση Πίστης - GR", 
+        "hero-title": "Το Λιμάνι του Croitoru Sandu", 
+        "latest-updates": "Σκέψεις του συγγραφέα", 
+        "post-button": "Ανάρτηση", 
+        "footer-title": "Επικοινωνία", 
+        "book1-title": "Διάγνωση Πίστης - RO", 
+        "book2-title": "Διάγνωση Πίστης - GR", 
+        "translate-to": "Μετάφραση στα Ελληνικά", 
+        "flag": "gr",
+        "book1-desc-p1": "Η πίστη είναι ο αλγόριθμος εκείνων που δεν μπορούν να αντιληφθούν και να εμβαθύνουν στην αλήθεια μέσω της γνώσης και της βίωσής της, και συνοψίζεται μόνο στην a priori αβεβαιότητα της δογματικής ψευδαίσθησης του τι συμβολίζει ή ενσαρκώνει η αλήθεια. Άλλο είναι να γίνει ο Ιησούς μια αποδεκτή αλήθεια για σένα μέσω της πίστης σου σε Αυτόν και άλλο να συγχωνευτείς με την αλήθεια του Ιησού από την πρίσμα της υπερβατικής συγχώνευσης της ίδιας της ύπαρξης μέσω της γνώσης Του. Άλλο είναι να πιστεύεις στην αλήθεια και άλλο να υπερβαίνεις την αλήθεια γίνοντας αναπόσπαστο μέρος της μέσω της χριστικής εξίσωσης της πνευματικής κβαντικής μεταμόρφωσης της ύπαρξης στη δόνηση της φράσης: \"Εγώ είμαι η αλήθεια!\"",
+        "book1-desc-p2": "Δεν μπορείτε να ζήσετε, να νιώσετε ή να γνωρίσετε τον Θεό μέσω της πίστης. Η πίστη είναι προνόμιο της άγνοιας. Προσευχόμενοι σε αυτόν που δεν γνωρίζετε... η αλήθεια δεν σας αποκαλύπτεται μέσω της πίστης σε Αυτόν αλλά μέσω της γνώσης Του, και συνεχίζετε να προσεύχεστε σε αυτόν που δεν γνωρίζετε. Μην περιμένετε την αποκάλυψη της αλήθειας μέσω της πίστης, το πολύ την ανακάλυψη του εαυτού σας, και αυτό μόνο αν την πίστη που έχετε, την έχετε για τον εαυτό σας. Αποδεχόμενοι μια ομαδική πίστη μετατρέπεστε σε έναν πνευματικά ημιμαθή άνθρωπο. αρνούμενοι την ομαδική πίστη και ευθυγραμμίζοντας τον εαυτό σας με τη δική σας πίστη, μετατρέπεστε σταδιακά σε έναν λόγιο ημι-αποκτημένων αληθειών. Σας είπαν ότι αν έχετε πίστη ίση με έναν κόκκο σιναπιού θα μετακινήσετε βουνά. Λοιπόν την έχετε, πόσα βουνά μετακινήσατε με αυτήν; Δεν σας ζητώ να μετακινήσετε βουνά, αλλά βάλτε αυτόν τον κόκκο σιναπιού μπροστά σας και μέσω της πίστης που έχετε: Μετακινήστε τον! Αν δεν μετακινήθηκε τότε έχετε ένα σοβαρό πρόβλημα με τη δική σας πίστη. Η λύση; Η εκπλήρωση. Ο Ιησούς ήρθε να εκπληρώσει τον Νόμο, εσείς εκπληρώστε την πίστη σας μέσω της γνώσης, αλλιώς η Βασιλεία των Ουρανών θα παραμείνει ένα άγνωστο και ανέγγιχτο φωτοστεφανο τόσο κυριολεκτικά όσο και μεταφορικά.",
+        "book2-desc-p1": "Η συνέχεια σύντομα!"
+    }
+};
+
+let currentLang = 'en';
+const langOrder = ['en', 'gr', 'ro'];
+
+function cycleLanguage() {
+    let idx = (langOrder.indexOf(currentLang) + 1) % langOrder.length;
+    currentLang = langOrder[idx];
+    applyLang(currentLang);
+}
+
+function applyLang(lang) {
+    const t = translations[lang];
+    document.getElementById('flag-icon').src = `https://flagcdn.com/w40/${t.flag}.png`;
+    for (let key in t) {
+        const el = document.getElementById(key);
+        if (el) el.textContent = t[key];
+    }
+    // Reload feed to update post translate buttons (and hide them if RO)
+    renderFeed();
+}
+
+// --- INIT LANGUAGE ON LOAD ---
+// This ensures the text loads immediately on page start
+window.onload = () => {
+    startSlideshow();
+    applyLang(currentLang);
+};
+
+// --- POST LOGIC ---
+let adminMode = false;
+
+function renderFeed() {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '';
+    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
+    
+    // Logic: If current UI is Romanian, hide the translate button (content is already RO)
+    const btnDisplay = currentLang === 'ro' ? 'none' : 'inline-block';
+    
+    posts.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'feed-item';
+        div.innerHTML = `
+            <span class="user-label">Sandu Croitoru</span>
+            <span class="timestamp">${p.date}</span>
+            <div id="txt-${p.id}">${p.text}</div>
+            <button class="translate-toggle" style="display:${btnDisplay}" onclick="handleTranslate(${p.id}, '${encodeURIComponent(p.text)}')">${translations[currentLang]['translate-to']}</button>
+            <div class="translated-content" id="trans-${p.id}"></div>
+            ${adminMode ? `<div style="margin-top:10px;"><button onclick="deletePost(${p.id})" style="color:red; background:none; border:none; cursor:pointer;">Delete</button></div>` : ''}
+        `;
+        feed.appendChild(div);
+    });
+}
+
+function submitPost() {
+    const val = document.getElementById('postInput').value;
+    if(!val.trim()) return;
+    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
+    posts.unshift({ id: Date.now(), text: val, date: new Date().toLocaleString() });
+    localStorage.setItem('sandu_posts', JSON.stringify(posts));
+    document.getElementById('postInput').value = '';
+    renderFeed();
+}
+
+function deletePost(id) {
+    let posts = JSON.parse(localStorage.getItem('sandu_posts')).filter(p => p.id !== id);
+    localStorage.setItem('sandu_posts', JSON.stringify(posts));
+    renderFeed();
+}
+
+// --- UPDATED TRANSLATION LOGIC ---
+async function handleTranslate(id, text) {
+    const box = document.getElementById(`trans-${id}`);
+    if(box.style.display === 'block') { box.style.display = 'none'; return; }
+    
+    box.textContent = "Loading translation...";
+    box.style.display = 'block';
+    
+    try {
+        // Force SOURCE to Romanian ('ro')
+        // Determine TARGET based on current UI language
+        let target = 'en'; // Default to English
+        if (currentLang === 'gr') target = 'el'; // Greek Code
+        
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${text}&langpair=ro|${target}`);
+        const data = await res.json();
+        
+        if(data.responseData.translatedText) {
+            box.textContent = data.responseData.translatedText;
+        } else {
+            box.textContent = "Translation unavailable.";
+        }
+    } catch { box.textContent = "Error loading translation."; }
+}
+
+// --- ADMIN LOGIC ---
+function handleGhostClick() {
+    if(adminMode) { adminMode = false; document.getElementById('admin-editor-zone').style.display='none'; renderFeed(); alert("Viewer Mode"); }
+    else { document.getElementById('login-modal').style.display='flex'; }
+}
+
+function attemptLogin() {
+    const u = document.getElementById('login-username').value;
+    const p = document.getElementById('login-password').value;
+    if(u === "admin" && p === "12345") {
+        adminMode = true;
+        document.getElementById('admin-editor-zone').style.display='block';
+        closeLogin();
+        renderFeed();
+    } else { alert("Wrong"); }
+}
+
+function closeLogin() { document.getElementById('login-modal').style.display='none'; }
+</script>
+</body>
+</html>
