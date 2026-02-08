@@ -352,6 +352,17 @@ textarea#postInput {
     margin-top: 5px;
     display: none;
 }
+
+/* Warning message for missing API key */
+.api-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 0.9rem;
+}
 </style>
 </head>
 
@@ -463,6 +474,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 4. DEEPL API CONFIGURATION - REPLACE WITH YOUR OWN API KEY
+const DEEPL_API_KEY = ''; // ← PUT YOUR DEEPL API KEY HERE
+const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
+
 // --- GLOBAL VARIABLES ---
 let currentLang = 'en';
 const langOrder = ['en', 'gr', 'ro'];
@@ -571,7 +586,7 @@ function applyLang(lang) {
     renderFeed();
 }
 
-// --- ENHANCED TRANSLATION FUNCTION (HANDLES LONG TEXTS) ---
+// --- DEEPL TRANSLATION FUNCTION (MUCH BETTER QUALITY) ---
 window.handleTranslate = async function(id, encodedText) {
     const box = document.getElementById(`trans-${id}`);
     const toggleBtn = box.previousElementSibling;
@@ -582,113 +597,73 @@ window.handleTranslate = async function(id, encodedText) {
         return; 
     }
     
+    // Check if DeepL API key is set
+    if (!DEEPL_API_KEY) {
+        box.innerHTML = '<div class="api-warning">⚠️ DeepL API key not configured. Please add your API key in the JavaScript code.</div>';
+        box.style.display = 'block';
+        return;
+    }
+    
     // Show loading state
-    box.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loading"></span> Preparing translation...</div>';
+    box.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loading"></span> Translating with DeepL...</div>';
     box.style.display = 'block';
     
     try {
         const originalText = decodeURIComponent(encodedText);
-        let target = currentLang === 'gr' ? 'el' : 'en';
         
-        // Split text into chunks of maximum 500 characters
-        const chunks = splitTextIntoChunks(originalText, 450); // Using 450 to be safe
+        // Map language codes for DeepL
+        let targetLang;
+        switch(currentLang) {
+            case 'gr': targetLang = 'EL'; break; // Greek
+            case 'ro': targetLang = 'RO'; break; // Romanian (show original)
+            default: targetLang = 'EN-GB'; break; // English
+        }
         
-        if (chunks.length === 1) {
-            // If text is short, use single translation
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=ro|${target}`);
-            const data = await res.json();
-            box.textContent = data.responseData.translatedText || "Translation unavailable.";
+        // If current language is Romanian, show original text (no translation needed)
+        if (currentLang === 'ro') {
+            box.textContent = originalText;
+            return;
+        }
+        
+        // For DeepL, we can send larger texts (up to 128KB)
+        const formData = new FormData();
+        formData.append('auth_key', DEEPL_API_KEY);
+        formData.append('text', originalText);
+        formData.append('target_lang', targetLang);
+        formData.append('source_lang', 'RO'); // Source is always Romanian
+        formData.append('preserve_formatting', '1'); // Preserve formatting
+        formData.append('formality', 'default'); // Can be 'more' or 'less' for formality
+        
+        const response = await fetch(DEEPL_API_URL, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`DeepL API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.translations && data.translations.length > 0) {
+            box.innerHTML = `<div class="translated-text">${data.translations[0].text}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 10px; text-align: right;">
+                                Translated by DeepL
+                            </div>`;
         } else {
-            // For long texts, translate chunk by chunk
-            box.innerHTML = `<div style="text-align:center; padding:10px;">
-                <span class="loading"></span> Translating... (0/${chunks.length} chunks)
-                <div class="translate-progress" id="progress-${id}"></div>
-            </div>`;
-            
-            const translatedChunks = [];
-            let completed = 0;
-            
-            // Create progress indicator
-            const progressEl = document.getElementById(`progress-${id}`);
-            
-            // Translate each chunk
-            for (let i = 0; i < chunks.length; i++) {
-                try {
-                    // Update progress
-                    completed++;
-                    progressEl.textContent = `Translating chunk ${completed}/${chunks.length}...`;
-                    progressEl.style.display = 'block';
-                    
-                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunks[i])}&langpair=ro|${target}`);
-                    const data = await res.json();
-                    
-                    if (data.responseData.translatedText) {
-                        translatedChunks.push(data.responseData.translatedText);
-                    } else {
-                        translatedChunks.push(chunks[i]); // Fallback to original if translation fails
-                    }
-                } catch (error) {
-                    console.error(`Error translating chunk ${i}:`, error);
-                    translatedChunks.push(chunks[i]); // Fallback to original
-                }
-            }
-            
-            // Combine all translated chunks
-            const fullTranslation = translatedChunks.join(' ');
-            
-            // Display the translated text
-            box.innerHTML = `<div class="translated-text">${fullTranslation}</div>`;
-            
-            // Hide progress
-            progressEl.style.display = 'none';
+            box.textContent = "Translation unavailable.";
         }
         
     } catch (error) {
-        console.error("Translation error:", error);
-        box.textContent = "Error loading translation. The text might be too long.";
-    }
-}
-
-// Helper function to split text into chunks
-function splitTextIntoChunks(text, maxLength) {
-    const chunks = [];
-    let currentChunk = '';
-    
-    // Split by sentences first for better translation quality
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    
-    for (const sentence of sentences) {
-        if ((currentChunk + sentence).length <= maxLength) {
-            currentChunk += sentence;
+        console.error("DeepL translation error:", error);
+        
+        // Fallback to MyMemory API if DeepL fails
+        if (error.message.includes('429')) {
+            box.textContent = "⚠️ DeepL API rate limit exceeded. Try again in a moment.";
         } else {
-            if (currentChunk) {
-                chunks.push(currentChunk);
-            }
-            // If a single sentence is longer than maxLength, split it by words
-            if (sentence.length > maxLength) {
-                const words = sentence.split(' ');
-                currentChunk = '';
-                for (const word of words) {
-                    if ((currentChunk + ' ' + word).length <= maxLength) {
-                        currentChunk += (currentChunk ? ' ' : '') + word;
-                    } else {
-                        if (currentChunk) {
-                            chunks.push(currentChunk);
-                        }
-                        currentChunk = word;
-                    }
-                }
-            } else {
-                currentChunk = sentence;
-            }
+            box.textContent = "Error loading translation. Please check your DeepL API key.";
         }
     }
-    
-    if (currentChunk) {
-        chunks.push(currentChunk);
-    }
-    
-    return chunks;
 }
 
 // --- FIREBASE POST LOGIC ---
