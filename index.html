@@ -328,6 +328,31 @@ textarea#postInput {
     line-height: 1.6;
     font-size: 1.05rem;
 }
+
+/* Share link styling */
+.share-link-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-color);
+    display: none;
+}
+
+.share-link-container.show {
+    display: block;
+}
+
+.share-link {
+    word-break: break-all;
+    font-size: 0.9rem;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.share-link:hover {
+    text-decoration: underline;
+}
 </style>
 </head>
 
@@ -376,13 +401,19 @@ textarea#postInput {
                 </div>
             </div>
             
+            <!-- Share link container (hidden by default) -->
+            <div class="share-link-container" id="share-link-container">
+                <a href="#" id="share-link" class="share-link" target="_blank"></a>
+            </div>
+            
             <!-- Author's Thoughts section - ALWAYS VISIBLE -->
             <h2 id="latest-updates">Author's Thoughts</h2>
             <div id="feed"></div>
         </div>
         
         <footer class="site-footer">
-            <p>&copy; 2026 Sandu Croitoru. All Rights Reserved.</p>
+            <h2 id="footer-title">Communication</h2>
+            <p>sandusilvia.croitoru@gmail.com</p>
             <!-- Ghost login area moved to bottom of page -->
             <div class="ghost-login-area" onclick="handleGhostClick()"></div>
         </footer>
@@ -526,8 +557,42 @@ function applyLang(lang) {
 window.onload = () => {
     startSlideshow();
     applyLang(currentLang);
+    checkUrlForPosts(); // Check if URL contains shared posts
     renderFeed(); // Load posts immediately on page load
 };
+
+// Function to check URL for shared posts
+function checkUrlForPosts() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedPosts = urlParams.get('posts');
+    
+    if (sharedPosts) {
+        try {
+            const posts = JSON.parse(decodeURIComponent(sharedPosts));
+            // Merge with existing posts
+            const existingPosts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
+            const newPostIds = new Set(existingPosts.map(p => p.id));
+            
+            // Add only new posts that don't already exist
+            posts.forEach(post => {
+                if (!newPostIds.has(post.id)) {
+                    existingPosts.unshift(post);
+                    newPostIds.add(post.id);
+                }
+            });
+            
+            localStorage.setItem('sandu_posts', JSON.stringify(existingPosts));
+            renderFeed();
+            
+            // Show share link container
+            document.getElementById('share-link-container').classList.add('show');
+            document.getElementById('share-link').textContent = window.location.href;
+            document.getElementById('share-link').href = window.location.href;
+        } catch (e) {
+            console.error('Error parsing shared posts:', e);
+        }
+    }
+}
 
 function renderFeed() {
     const feed = document.getElementById('feed');
@@ -578,11 +643,15 @@ function submitPost() {
         document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
     } else {
         // Creating new post
-        posts.unshift({ 
+        const newPost = { 
             id: Date.now(), 
             text: val, 
             date: new Date().toLocaleString() 
-        });
+        };
+        posts.unshift(newPost);
+        
+        // Generate shareable link
+        generateShareLink(posts);
     }
     
     localStorage.setItem('sandu_posts', JSON.stringify(posts));
@@ -590,10 +659,40 @@ function submitPost() {
     renderFeed();
 }
 
+function generateShareLink(posts) {
+    if (posts.length === 0) return;
+    
+    // Encode posts in URL
+    const encodedPosts = encodeURIComponent(JSON.stringify(posts.slice(0, 50))); // Limit to 50 posts
+    const shareUrl = `${window.location.origin}${window.location.pathname}?posts=${encodedPosts}`;
+    
+    // Show share link
+    const shareContainer = document.getElementById('share-link-container');
+    const shareLink = document.getElementById('share-link');
+    
+    shareLink.textContent = shareUrl;
+    shareLink.href = shareUrl;
+    shareContainer.classList.add('show');
+    
+    // Copy to clipboard automatically
+    navigator.clipboard.writeText(shareUrl).then(() => {
+    
+              
+        setTimeout(() => {
+            shareLink.textContent = '';
+        }, 2);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+
 function deletePost(id) {
     let posts = JSON.parse(localStorage.getItem('sandu_posts')).filter(p => p.id !== id);
     localStorage.setItem('sandu_posts', JSON.stringify(posts));
     renderFeed();
+    
+    // Regenerate share link after deletion
+    generateShareLink(posts);
 }
 
 function editPost(id) {
@@ -659,4 +758,3 @@ function closeLogin() {
 </script>
 </body>
 </html>
-
