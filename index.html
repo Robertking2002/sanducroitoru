@@ -435,33 +435,33 @@ textarea#postInput {
     </div>
 </div>
 
-<script>
-// --- SLIDESHOW LOGIC ---
-const slides = ['Background1.jpg', 'Background2.jpg', 'Background3.jpg'];
-let slideIdx = 0;
+<script type="module">
+// 1. Import the Firebase functions we need
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-function startSlideshow() {
-    const hero = document.getElementById('hero-slideshow');
-    hero.style.backgroundImage = `url('${slides[0]}')`;
-    setInterval(() => {
-        slideIdx = (slideIdx + 1) % slides.length;
-        hero.style.backgroundImage = `url('${slides[slideIdx]}')`;
-    }, 5000);
-}
+// 2. Your specific keys from the screenshot
+const firebaseConfig = {
+  apiKey: "AIzaSyBCwpfHmLZjDV5l2W-TKnN57K2ZqP5jg0c",
+  authDomain: "sandu-croitoru.firebaseapp.com",
+  projectId: "sandu-croitoru",
+  storageBucket: "sandu-croitoru.firebasestorage.app",
+  messagingSenderId: "998140149044",
+  appId: "1:998140149044:web:8b1665b17fd320d44df961",
+  measurementId: "G-VKQ3JVG7V2"
+};
 
-function toggleCover(id, front, back) {
-    const img = document.getElementById(id);
-    img.src = img.src.includes(front) ? back : front;
-}
+// 3. Initialize Firebase & Firestore
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-function showTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    btn.classList.add('active');
-    window.scrollTo(0,0);
-}
+// --- GLOBAL VARIABLES ---
+let currentLang = 'en';
+const langOrder = ['en', 'gr', 'ro'];
+let adminMode = false;
+let editingPostId = null;
 
+// --- TRANSLATIONS ---
 const translations = {
     en: { 
         "nav-home": "Home", 
@@ -519,12 +519,34 @@ const translations = {
     }
 };
 
-let currentLang = 'en';
-const langOrder = ['en', 'gr', 'ro'];
-let adminMode = false;
-let editingPostId = null;
-const POSTS_FILE = 'posts.json';
+// --- SLIDESHOW LOGIC ---
+const slides = ['Background1.jpg', 'Background2.jpg', 'Background3.jpg'];
+let slideIdx = 0;
 
+function startSlideshow() {
+    const hero = document.getElementById('hero-slideshow');
+    hero.style.backgroundImage = `url('${slides[0]}')`;
+    setInterval(() => {
+        slideIdx = (slideIdx + 1) % slides.length;
+        hero.style.backgroundImage = `url('${slides[slideIdx]}')`;
+    }, 5000);
+}
+
+function toggleCover(id, front, back) {
+    const img = document.getElementById(id);
+    img.src = img.src.includes(front) ? back : front;
+}
+
+// --- TAB LOGIC ---
+function showTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo(0,0);
+}
+
+// --- LANGUAGE LOGIC ---
 function cycleLanguage() {
     let idx = (langOrder.indexOf(currentLang) + 1) % langOrder.length;
     currentLang = langOrder[idx];
@@ -538,144 +560,115 @@ function applyLang(lang) {
         const el = document.getElementById(key);
         if (el) el.textContent = t[key];
     }
-}
-
-window.onload = () => {
-    startSlideshow();
-    applyLang(currentLang);
-    loadPosts(); // Load posts from JSON file
-};
-
-// Load posts from the JSON file
-async function loadPosts() {
-    try {
-        const response = await fetch(POSTS_FILE + '?t=' + Date.now()); // Cache bust
-        if (response.ok) {
-            const posts = await response.json();
-            localStorage.setItem('sandu_posts', JSON.stringify(posts));
-        } else {
-            // If file doesn't exist, use empty array
-            localStorage.setItem('sandu_posts', JSON.stringify([]));
-        }
-    } catch (error) {
-        console.error('Error loading posts:', error);
-        localStorage.setItem('sandu_posts', JSON.stringify([]));
-    }
     renderFeed();
 }
 
-function renderFeed() {
-    const feed = document.getElementById('feed');
-    feed.innerHTML = '';
-    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-    const btnDisplay = currentLang === 'ro' ? 'none' : 'inline-block';
-    
-    if (posts.length === 0) {
-        // Show welcome message if no posts exist
-        feed.innerHTML = `<div class="feed-item" style="text-align: center; color: #666; font-style: italic;">
-            No thoughts shared yet. Check back soon for updates from the author.
-        </div>`;
-        return;
-    }
-    
-    posts.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'feed-item';
-        div.innerHTML = `
-            <span class="user-label">Sandu Croitoru</span>
-            <span class="timestamp">${p.date}</span>
-            <div class="post-content" id="txt-${p.id}">${p.text}</div>
-            <button class="translate-toggle" style="display:${btnDisplay}" onclick="handleTranslate(${p.id}, '${encodeURIComponent(p.text)}')">${translations[currentLang]['translate-to']}</button>
-            <div class="translated-content" id="trans-${p.id}"></div>
-            <div class="admin-buttons" id="admin-buttons-${p.id}" style="display:${adminMode ? 'block' : 'none'}">
-                <button class="delete-btn" onclick="deletePost(${p.id})">Delete</button>
-                <button class="edit-btn" onclick="editPost(${p.id})">Edit</button>
-            </div>
-        `;
-        feed.appendChild(div);
-    });
-}
-
-async function submitPost() {
+// --- FIREBASE POST LOGIC ---
+window.submitPost = async function() {
     const val = document.getElementById('postInput').value;
     if(!val.trim()) return;
-    
+
     const statusEl = document.getElementById('post-status');
     statusEl.innerHTML = '<span class="loading"></span> Saving...';
-    
-    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-    
-    if (editingPostId) {
-        // Editing existing post
-        const postIndex = posts.findIndex(p => p.id === editingPostId);
-        if (postIndex !== -1) {
-            posts[postIndex].text = val;
-            posts[postIndex].date = new Date().toLocaleString();
+
+    try {
+        if (editingPostId) {
+            // Editing existing post
+            await updateDoc(doc(db, "posts", editingPostId), {
+                text: val,
+                date: new Date().toLocaleString(),
+                timestamp: Date.now() 
+            });
+            editingPostId = null;
+            document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
+        } else {
+            // Creating new post
+            await addDoc(collection(db, "posts"), {
+                text: val,
+                date: new Date().toLocaleString(),
+                timestamp: Date.now() 
+            });
         }
-        editingPostId = null;
-        document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
-    } else {
-        // Creating new post
-        posts.unshift({ 
-            id: Date.now(), 
-            text: val, 
-            date: new Date().toLocaleString() 
+        
+        document.getElementById('postInput').value = '';
+        await renderFeed();
+        
+        statusEl.textContent = '✓ Saved';
+        setTimeout(() => {
+            statusEl.textContent = '';
+        }, 2000);
+    } catch (e) {
+        console.error("Error: ", e);
+        statusEl.textContent = '✗ Error saving';
+        setTimeout(() => {
+            statusEl.textContent = '';
+        }, 2000);
+    }
+}
+
+window.renderFeed = async function() {
+    const feed = document.getElementById('feed');
+    feed.innerHTML = '<p style="color:#888; padding:20px; text-align:center;">Loading thoughts...</p>';
+    
+    try {
+        const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+        
+        feed.innerHTML = '';
+        
+        if (querySnapshot.empty) {
+            feed.innerHTML = `<div class="feed-item" style="text-align: center; color: #666; font-style: italic;">
+                No thoughts shared yet. Check back soon for updates from the author.
+            </div>`;
+            return;
+        }
+        
+        const btnDisplay = currentLang === 'ro' ? 'none' : 'inline-block';
+        const translateText = translations[currentLang]['translate-to'];
+
+        querySnapshot.forEach((docSnap) => {
+            const p = docSnap.data();
+            const id = docSnap.id;
+            const div = document.createElement('div');
+            div.className = 'feed-item';
+            div.innerHTML = `
+                <span class="user-label">Sandu Croitoru</span>
+                <span class="timestamp">${p.date}</span>
+                <div class="post-content" id="txt-${id}">${p.text}</div>
+                <button class="translate-toggle" style="display:${btnDisplay}" onclick="handleTranslate('${id}', '${encodeURIComponent(p.text)}')">${translateText}</button>
+                <div class="translated-content" id="trans-${id}"></div>
+                <div class="admin-buttons" id="admin-buttons-${id}" style="display:${adminMode ? 'block' : 'none'}">
+                    <button class="delete-btn" onclick="deletePost('${id}')">Delete</button>
+                    <button class="edit-btn" onclick="editPost('${id}', '${encodeURIComponent(p.text)}')">Edit</button>
+                </div>
+            `;
+            feed.appendChild(div);
         });
-    }
-    
-    localStorage.setItem('sandu_posts', JSON.stringify(posts));
-    document.getElementById('postInput').value = '';
-    renderFeed();
-    
-    // Save posts to "permanent" storage (simulated with localStorage for now)
-    // In a real implementation, this would save to a server/database
-    await savePostsToServer(posts);
-    
-    statusEl.textContent = '✓ Saved';
-    setTimeout(() => {
-        statusEl.textContent = '';
-    }, 2000);
-}
-
-// Simulated server save - in reality this would be an API call
-async function savePostsToServer(posts) {
-    // For GitHub Pages, we can't write files directly
-    // This is a simulation - in production you'd need a backend API
-    console.log('Posts would be saved to server:', posts);
-    
-    // For now, we'll use localStorage as the "permanent" storage
-    // All visitors will see the same posts from localStorage
-    // This works as long as they visit the same browser/device
-    
-    // Note: For true cross-user sharing, you'd need:
-    // 1. A backend server with API endpoints
-    // 2. Or use a free service like Firebase, Supabase, etc.
-    // 3. Or use GitHub API to update a file in the repo (requires authentication)
-    
-    return new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-}
-
-async function deletePost(id) {
-    let posts = JSON.parse(localStorage.getItem('sandu_posts')).filter(p => p.id !== id);
-    localStorage.setItem('sandu_posts', JSON.stringify(posts));
-    renderFeed();
-    
-    // Update "server"
-    await savePostsToServer(posts);
-}
-
-function editPost(id) {
-    const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-    const post = posts.find(p => p.id === id);
-    if (post) {
-        document.getElementById('postInput').value = post.text;
-        editingPostId = id;
-        document.getElementById('post-button').textContent = 'Update';
-        document.getElementById('postInput').focus();
+    } catch (e) {
+        console.error("Error loading feed: ", e);
+        feed.innerHTML = '<p style="color:#ff4444; padding:20px; text-align:center;">Error loading thoughts. Make sure you enabled Test Mode in Firestore Database.</p>';
     }
 }
 
-async function handleTranslate(id, text) {
+window.deletePost = async function(id) {
+    try {
+        await deleteDoc(doc(db, "posts", id));
+        await renderFeed();
+    } catch (e) {
+        console.error("Error deleting post: ", e);
+    }
+}
+
+window.editPost = function(id, encodedText) {
+    const text = decodeURIComponent(encodedText);
+    document.getElementById('postInput').value = text;
+    editingPostId = id;
+    document.getElementById('post-button').textContent = 'Update';
+    document.getElementById('postInput').focus();
+}
+
+// --- TRANSLATION LOGIC ---
+window.handleTranslate = async function(id, text) {
     const box = document.getElementById(`trans-${id}`);
     if(box.style.display === 'block') { 
         box.style.display = 'none'; 
@@ -690,10 +683,13 @@ async function handleTranslate(id, text) {
         const res = await fetch(`https://api.mymemory.translated.net/get?q=${text}&langpair=ro|${target}`);
         const data = await res.json();
         box.textContent = data.responseData.translatedText || "Unavailable";
-    } catch { box.textContent = "Error."; }
+    } catch { 
+        box.textContent = "Error."; 
+    }
 }
 
-function handleGhostClick() {
+// --- ADMIN LOGIC ---
+window.handleGhostClick = function() {
     if(adminMode) { 
         // Logout silently
         adminMode = false; 
@@ -705,7 +701,7 @@ function handleGhostClick() {
     }
 }
 
-function attemptLogin() {
+window.attemptLogin = function() {
     const u = document.getElementById('login-username').value;
     const p = document.getElementById('login-password').value;
     
@@ -719,13 +715,23 @@ function attemptLogin() {
     }
 }
 
-function closeLogin() { 
+window.closeLogin = function() { 
     document.getElementById('login-modal').style.display='none'; 
     document.getElementById('login-username').value = '';
     document.getElementById('login-password').value = '';
 }
+
+// --- INITIAL LOAD ---
+window.addEventListener('DOMContentLoaded', () => {
+    startSlideshow();
+    applyLang(currentLang);
+    renderFeed();
+});
+
+// Make functions available globally
+window.cycleLanguage = cycleLanguage;
+window.showTab = showTab;
+window.toggleCover = toggleCover;
 </script>
 </body>
 </html>
-
-
