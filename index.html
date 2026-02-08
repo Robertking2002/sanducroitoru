@@ -26,7 +26,7 @@ body, html {
     color: var(--text-color);
     scroll-behavior: smooth;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: hidden; /* Prevents side-scrolling on mobile */
 }
 
 h1, h2, .nav-btn, .user-label, .section-header {
@@ -98,14 +98,16 @@ nav button.active {
     padding: 0 20px;
 }
 
+/* Responsive Scaling for Titles */
 .hero-section h1 {
     font-size: clamp(2rem, 8vw, 3.5rem); 
     text-shadow: 2px 2px 15px rgba(0,0,0,0.9);
     margin: 0;
 }
 
-/* --- MOBILE SPECIFIC --- */
+/* --- MOBILE SPECIFIC ANIMATION & LAYOUT --- */
 @media (max-width: 768px) {
+    /* Move Logo to avoid overlap */
     .logo-link {
         position: absolute;
         top: 10px;
@@ -113,7 +115,9 @@ nav button.active {
         transform: translateX(-50%);
     }
 
-    header { padding-top: 70px; }
+    header {
+        padding-top: 70px; /* Make room for the centered logo above */
+    }
 
     nav button {
         margin: 5px;
@@ -121,6 +125,7 @@ nav button.active {
         letter-spacing: 1px;
     }
 
+    /* Slow background pan animation for mobile only */
     @keyframes mobilePan {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
@@ -128,7 +133,7 @@ nav button.active {
     }
 
     .hero-section {
-        background-size: auto 100%;
+        background-size: auto 100%; /* Ensure height fits, width can pan */
         animation: mobilePan 30s linear infinite;
     }
 }
@@ -153,7 +158,7 @@ nav button.active {
 .tab-content { display: none; min-height: calc(100vh - 80px); animation: fadeIn 0.6s ease; }
 .tab-content.active { display: block; }
 
-/* --- POST CONTAINER --- */
+/* --- POST CONTAINER - ALWAYS VISIBLE --- */
 .post-container {
     width: 90%;
     max-width: 900px;
@@ -207,7 +212,7 @@ textarea#postInput {
 /* Admin buttons styling */
 .admin-buttons {
     margin-top: 15px;
-    display: none;
+    display: none; /* Hidden by default */
 }
 
 .admin-buttons button {
@@ -264,7 +269,7 @@ textarea#postInput {
     position: relative;
 }
 
-/* GHOST LOGIN AREA */
+/* GHOST LOGIN AREA - AT VERY BOTTOM OF PAGE */
 .ghost-login-area { 
     position: absolute;
     bottom: 10px;
@@ -340,7 +345,15 @@ textarea#postInput {
     100% { transform: rotate(360deg); }
 }
 
-/* Warning message */
+/* Progress indicator for translation */
+.translate-progress {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+    display: none;
+}
+
+/* Warning message for missing API key */
 .api-warning {
     background-color: #fff3cd;
     border: 1px solid #ffeaa7;
@@ -349,13 +362,6 @@ textarea#postInput {
     border-radius: 5px;
     margin: 10px 0;
     font-size: 0.9rem;
-}
-
-/* Translation cache indicator */
-.cache-indicator {
-    font-size: 0.75rem;
-    color: #28a745;
-    margin-top: 5px;
 }
 </style>
 </head>
@@ -396,6 +402,7 @@ textarea#postInput {
         </div>
         
         <div class="post-container">
+            <!-- Admin editor - hidden by default, shown when admin logs in -->
             <div id="admin-editor-zone">
                 <span class="user-label">Sandu Croitoru</span>
                 <textarea id="postInput" placeholder="Share your thoughts..."></textarea>
@@ -405,12 +412,14 @@ textarea#postInput {
                 </div>
             </div>
             
+            <!-- Author's Thoughts section - ALWAYS VISIBLE -->
             <h2 id="latest-updates">Author's Thoughts</h2>
             <div id="feed"></div>
         </div>
         
         <footer class="site-footer">
             <p>© 2026 Sandu Croitoru. All rights reserved.</p>
+            <!-- Ghost login area moved to bottom of page -->
             <div class="ghost-login-area" onclick="handleGhostClick()"></div>
         </footer>
     </div>
@@ -465,8 +474,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 4. DEEPL API CONFIGURATION - USE YOUR KEY WITH :fx
-const DEEPL_API_KEY = '178ff1aa-27be-4df3-a8a4-50243893aab1:fx'; // ← YOUR KEY HERE
+// 4. DEEPL API CONFIGURATION - REPLACE WITH YOUR OWN API KEY
+const DEEPL_API_KEY = ''; // ← PUT YOUR DEEPL API KEY HERE
 const DEEPL_API_URL = 'https://api-free.deepl.com/v2/translate';
 
 // --- GLOBAL VARIABLES ---
@@ -490,7 +499,10 @@ const translations = {
         "book1-btn": "VIEW BOOK",
         "book2-btn": "BOOK", 
         "translate-to": "Translate to English", 
-        "flag": "gb"
+        "flag": "gb",
+        "book1-desc-p1": "Faith is the algorithm of those who cannot perceive and deepen the truth through knowing and living it, and sums up only the aprioric uncertainty of the credal illusion of what the truth symbolizes or embodies. It is one thing for Jesus to become an accepted truth for you through your faith in Him and another to merge with the truth of Jesus from the perspective of the transhumance of the merging of one's own being through knowing Him. It is one thing to believe in the truth and another to transcend the truth by becoming an integral part of it through the Christ equation of the spiritual quantum metamorphosis of the being in the vibration of the phrase: \"I am the truth!\"",
+        "book1-desc-p2": "You cannot live, feel or know God through faith. Faith is the prerogative of ignorance. Praying to the one you do not know... the truth is not revealed to you through faith in Him but through knowing Him, and you continue to pray to the one you do not know. Do not expect the revelation of the truth through faith, at most the discovery of your own self, and that only if the faith you have, you have for yourself. Accepting a group faith transforms you into a spiritual semi-learned person; refusing group faith and aligning yourself with your own faith transforms you gradually into a learned person of semi-acquired truths. You were told that if you have faith as small as a mustard seed you will move mountains. Well you have it, so how many mountains have you moved with it? I do not ask you to move mountains, but put that mustard seed in front of you and through the faith you have: Move it! If it hasn't moved then you have a major problem with your own faith. The solution? Fulfillment. Jesus came to fulfill the Law, you fulfill your faith through knowledge, otherwise the Kingdom of Heaven will remain an unknown and untouched nimbus both literally and figuratively.",
+        "book2-desc-p1": "Coming Soon!"
     },
     ro: { 
         "nav-home": "Acasă", 
@@ -505,7 +517,10 @@ const translations = {
         "book1-btn": "VEZI CARTEA",
         "book2-btn": "CARTE", 
         "translate-to": "Original", 
-        "flag": "ro"
+        "flag": "ro",
+        "book1-desc-p1": "Credința este algoritmul celor ce nu pot percepe și aprofunda adevărul prin cunoașterea și trăirea acestuia și se rezumă doar la incertidudinea apriorică a iluziei crezuale a ceea ce adevărul simbolizează sau intruchipează. Una e să devină Iisus un adevăr acceptat pentru tine prin credința ta in El si alta e să fuzionezi cu adevărul lui Iisus din prisma transhumanței contopirii propriei ființe prin cunoașterea acestuia. Una e să crezi in adevăr și alta e să trancenzi adevărul devenind parte integrantă al acestuia prin ecuația hristică a metamorfozării cuanticii spirituale a ființei in vibrația frazei : \"Eu sunt adevărul!\"",
+        "book1-desc-p2": "Pe Dumnezeul nu-l poți trăi, simți sau cunoaște prin credință. Credința este apanajul necunoașterii. Rugându-te celui ce nu cunoști... adevărul nu ți se revelează prin credința in El ci prin cunoașterea acestuia iar tu continui să te rogi celui ce nu cunoști. Nu aștepta revelația adevărului prin credință, cel mult descoperirea propriului sine și asta doar dacă credința pe care o ai, o ai pentru tine însuți. Acceptând o credință de grup te transformi intr-un semidoct spiritual, refuzând credința de grup si aliniindu-te la credința proprie te transformi treptat intr-un doct al unor adevăruri seminsusite. Ți sa spus că dacă ai credință cât un bob de muștar vei muta munții. Ei bine o ai, atunci câți munți ai mutat cu ea? Eu nu îți cer să muți munții ci pune acel bob de muștar in fața ta și prin credința pe care o ai : Mută-l! Dacă nu sa mutat atunci ai o problemă majoră cu propria-ti credință. Soluția? Implinirea. Iisus a venit să împlinească Legea, tu implinește-ți credința prin cunoaștere, altfel Împărăția cerurilor va rămâne un nimb necunoscut și neatins atât la propriu cât și la figurat.",
+        "book2-desc-p1": "În curând!"
     },
     gr: { 
         "nav-home": "Αρχική", 
@@ -520,7 +535,10 @@ const translations = {
         "book1-btn": "ΠΡΟΒΟΛΗ ΒΙΒΛΙΟΥ",
         "book2-btn": "ΒΙΒΛΙΟ", 
         "translate-to": "Μετάφραση στα Ελληνικά", 
-        "flag": "gr"
+        "flag": "gr",
+        "book1-desc-p1": "Η πίστη είναι ο αλγόριθμος εκείνων που δεν μπορούν να αντιληφθούν και να εμβαθύνουν στην αλήθεια μέσω της γνώσης και της βίωσής της, και συνοψίζεται μόνο στην a priori αβεβαιότητα της δογματικής ψευδαίσθησης του τι συμβολίζει ή ενσαρκώνει η αλήθεια. Άλλο είναι να γίνει ο Ιησούς μια αποδεκτή αλήθεια για σένα μέσω της πίστης σου σε Αυτόν και άλλο να συγχωνευτείς με την αλήθεια του Ιησού από την πρίσμα της υπερβατικής συγχώνευσης της ίδιας της ύπαρξης μέσω της γνώσης Του. Άλλο είναι να πιστεύεις στην αλήθεια και άλλο να υπερβαίνεις την αλήθεια γίνοντας αναπόσπαστο μέρος της μέσω της χριστικής εξίσωσης της πνευματικής κβαντικής μεταμόρφωσης της ύπαρξης στη δόνηση της φράσης: \"Εγώ είμαι η αλήθεια!\"",
+        "book1-desc-p2": "Δεν μπορείτε να ζήσετε, να νιώσετε ή να γνωρίσετε τον Θεό μέσω της πίστης. Η πίστη είναι προνόμιο της άγνοιας. Προσευχόμενοι σε αυτόν που δεν γνωρίζετε... η αλήθεια δεν σας αποκαλύπτεται μέσω της πίστης σε Αυτόν αλλά μέσω της γνώσης Του, και συνεχίζετε να προσεύχεστε σε αυτόν που δεν γνωρίζετε. Μην περιμένετε την αποκάλυψη της αλήθειας μέσω της πίστης, το πολύ την ανακάλυψη του εαυτού σας, και αυτό μόνο αν την πίστη που έχετε, την έχετε για τον εαυτό σας. Αποδεχόμενοι μια ομαδική πίστη μετατρέπεστε σε έναν πνευματικά ημιμαθή άνθρωπο. αρνούμενοι την ομαδική πίστη και ευθυγραμμίζοντας τον εαυτό σας με τη δική σας πίστη, μετατρέπεστε σταδιακά σε έναν λόγιο ημι-αποκτημένων αληθειών. Σας είπαν ότι αν έχετε πίστη ίση με έναν κόκκο σιναπιού θα μετακινήσετε βουνά. Λοιπόν την έχετε, πόσα βουνά μετακινήσατε με αυτήν; Δεν σας ζητώ να μετακινήσετε βουνά, αλλά βάλτε αυτόν τον κόκκο σιναπιού μπροστά σας και μέσω της πίστης που έχετε: Μετακινήστε τον! Αν δεν μετακινήθηκε τότε έχετε ένα σοβαρό πρόβλημα με τη δική σας πίστη. Η λύση; Η εκπλήρωση. Ο Ιησούς ήρθε να εκπληρώσει τον Νόμο, εσείς εκπληρώστε την πίστη σας μέσω της γνώσης, αλλιώς η Βασιλεία των Ουρανών θα παραμείνει ένα άγνωστο και ανέγγιχτο φωτοστεφανο τόσο κυριολεκτικά όσο και μεταφορικά.",
+        "book2-desc-p1": "Έρχεται σύντομα!"
     }
 };
 
@@ -568,43 +586,7 @@ function applyLang(lang) {
     renderFeed();
 }
 
-// --- TRANSLATION CACHE SYSTEM ---
-const translationCache = {
-    get: function(text, targetLang) {
-        const key = `${text}_${targetLang}`;
-        const cached = localStorage.getItem(`translation_${key}`);
-        return cached ? JSON.parse(cached) : null;
-    },
-    
-    set: function(text, targetLang, translation) {
-        const key = `${text}_${targetLang}`;
-        localStorage.setItem(`translation_${key}`, JSON.stringify({
-            translation: translation,
-            timestamp: Date.now()
-        }));
-    },
-    
-    clearOld: function() {
-        // Optional: Clear translations older than 30 days
-        const oneMonthAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('translation_')) {
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (data.timestamp < oneMonthAgo) {
-                        localStorage.removeItem(key);
-                    }
-                } catch (e) {
-                    // Invalid JSON, remove it
-                    localStorage.removeItem(key);
-                }
-            }
-        }
-    }
-};
-
-// --- DEEPL TRANSLATION FUNCTION (WITH FALLBACK) ---
+// --- DEEPL TRANSLATION FUNCTION (MUCH BETTER QUALITY) ---
 window.handleTranslate = async function(id, encodedText) {
     const box = document.getElementById(`trans-${id}`);
     const toggleBtn = box.previousElementSibling;
@@ -615,193 +597,73 @@ window.handleTranslate = async function(id, encodedText) {
         return; 
     }
     
+    // Check if DeepL API key is set
+    if (!DEEPL_API_KEY) {
+        box.innerHTML = '<div class="api-warning">⚠️ DeepL API key not configured. Please add your API key in the JavaScript code.</div>';
+        box.style.display = 'block';
+        return;
+    }
+    
     // Show loading state
-    box.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loading"></span> Translating...</div>';
+    box.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loading"></span> Translating with DeepL...</div>';
     box.style.display = 'block';
     
     try {
         const originalText = decodeURIComponent(encodedText);
         
-        // Map language codes
+        // Map language codes for DeepL
         let targetLang;
         switch(currentLang) {
-            case 'gr': targetLang = 'EL'; break;
-            case 'ro': targetLang = 'RO'; break;
-            default: targetLang = 'EN-GB'; break;
+            case 'gr': targetLang = 'EL'; break; // Greek
+            case 'ro': targetLang = 'RO'; break; // Romanian (show original)
+            default: targetLang = 'EN-GB'; break; // English
         }
         
-        // If current language is Romanian, show original
+        // If current language is Romanian, show original text (no translation needed)
         if (currentLang === 'ro') {
             box.textContent = originalText;
             return;
         }
         
-        // Check cache first
-        const cached = translationCache.get(originalText, targetLang);
-        if (cached) {
-            box.innerHTML = `<div class="translated-text">${cached.translation}</div>
-                            <div class="cache-indicator">✓ From cache</div>`;
-            return;
+        // For DeepL, we can send larger texts (up to 128KB)
+        const formData = new FormData();
+        formData.append('auth_key', DEEPL_API_KEY);
+        formData.append('text', originalText);
+        formData.append('target_lang', targetLang);
+        formData.append('source_lang', 'RO'); // Source is always Romanian
+        formData.append('preserve_formatting', '1'); // Preserve formatting
+        formData.append('formality', 'default'); // Can be 'more' or 'less' for formality
+        
+        const response = await fetch(DEEPL_API_URL, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`DeepL API error: ${response.status}`);
         }
         
-        // Try DeepL API first
-        let translationResult = null;
+        const data = await response.json();
         
-        if (DEEPL_API_KEY) {
-            try {
-                translationResult = await translateWithDeepL(originalText, targetLang);
-            } catch (deepLError) {
-                console.log("DeepL failed, trying MyMemory...", deepLError);
-                translationResult = await translateWithMyMemory(originalText, targetLang);
-            }
-        } else {
-            translationResult = await translateWithMyMemory(originalText, targetLang);
-        }
-        
-        // Cache the translation
-        if (translationResult) {
-            translationCache.set(originalText, targetLang, translationResult);
-            box.innerHTML = `<div class="translated-text">${translationResult}</div>`;
+        if (data.translations && data.translations.length > 0) {
+            box.innerHTML = `<div class="translated-text">${data.translations[0].text}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 10px; text-align: right;">
+                                Translated by DeepL
+                            </div>`;
         } else {
             box.textContent = "Translation unavailable.";
         }
         
     } catch (error) {
-        console.error("Translation error:", error);
-        box.textContent = "Error loading translation. Please try again.";
-    }
-}
-
-// DeepL translation function
-async function translateWithDeepL(text, targetLang) {
-    // Check if text is too long for single request
-    const MAX_DEEPL_LENGTH = 30000; // DeepL limit
-    if (text.length > MAX_DEEPL_LENGTH) {
-        // Split and translate in chunks
-        return await translateLongTextWithDeepL(text, targetLang);
-    }
-    
-    const params = new URLSearchParams();
-    params.append('auth_key', DEEPL_API_KEY);
-    params.append('text', text);
-    params.append('target_lang', targetLang);
-    params.append('source_lang', 'RO');
-    
-    const response = await fetch(DEEPL_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`DeepL API error ${response.status}: ${errorText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.translations && data.translations.length > 0) {
-        return data.translations[0].text;
-    }
-    
-    throw new Error('No translation returned from DeepL');
-}
-
-// Split long texts for DeepL
-async function translateLongTextWithDeepL(text, targetLang) {
-    const chunks = splitTextIntoChunks(text, 20000); // Split into 20K char chunks
-    
-    const translatedChunks = [];
-    for (let i = 0; i < chunks.length; i++) {
-        try {
-            const translatedChunk = await translateWithDeepL(chunks[i], targetLang);
-            translatedChunks.push(translatedChunk);
-        } catch (error) {
-            console.error(`Error translating chunk ${i}:`, error);
-            translatedChunks.push(chunks[i]); // Fallback to original
-        }
-    }
-    
-    return translatedChunks.join(' ');
-}
-
-// MyMemory fallback translation
-async function translateWithMyMemory(text, targetLang) {
-    // Map language codes for MyMemory
-    let myMemoryLang;
-    switch(targetLang) {
-        case 'EL': myMemoryLang = 'el'; break; // Greek
-        default: myMemoryLang = 'en'; break; // English
-    }
-    
-    // Split text if too long for MyMemory
-    if (text.length > 450) {
-        const chunks = splitTextIntoChunks(text, 450);
-        const translatedChunks = [];
+        console.error("DeepL translation error:", error);
         
-        for (let i = 0; i < chunks.length; i++) {
-            try {
-                const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunks[i])}&langpair=ro|${myMemoryLang}`);
-                const data = await res.json();
-                if (data.responseData.translatedText) {
-                    translatedChunks.push(data.responseData.translatedText);
-                } else {
-                    translatedChunks.push(chunks[i]);
-                }
-            } catch (error) {
-                translatedChunks.push(chunks[i]);
-            }
-        }
-        
-        return translatedChunks.join(' ');
-    } else {
-        // Single request for short text
-        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ro|${myMemoryLang}`);
-        const data = await res.json();
-        return data.responseData?.translatedText || text;
-    }
-}
-
-// Helper function to split text into chunks
-function splitTextIntoChunks(text, maxLength) {
-    const chunks = [];
-    let currentChunk = '';
-    
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    
-    for (const sentence of sentences) {
-        if ((currentChunk + sentence).length <= maxLength) {
-            currentChunk += sentence;
+        // Fallback to MyMemory API if DeepL fails
+        if (error.message.includes('429')) {
+            box.textContent = "⚠️ DeepL API rate limit exceeded. Try again in a moment.";
         } else {
-            if (currentChunk) {
-                chunks.push(currentChunk);
-            }
-            if (sentence.length > maxLength) {
-                const words = sentence.split(' ');
-                currentChunk = '';
-                for (const word of words) {
-                    if ((currentChunk + ' ' + word).length <= maxLength) {
-                        currentChunk += (currentChunk ? ' ' : '') + word;
-                    } else {
-                        if (currentChunk) {
-                            chunks.push(currentChunk);
-                        }
-                        currentChunk = word;
-                    }
-                }
-            } else {
-                currentChunk = sentence;
-            }
+            box.textContent = "Error loading translation. Please check your DeepL API key.";
         }
     }
-    
-    if (currentChunk) {
-        chunks.push(currentChunk);
-    }
-    
-    return chunks;
 }
 
 // --- FIREBASE POST LOGIC ---
@@ -814,6 +676,7 @@ window.submitPost = async function() {
 
     try {
         if (editingPostId) {
+            // Editing existing post
             await updateDoc(doc(db, "posts", editingPostId), {
                 text: val,
                 date: new Date().toLocaleString(),
@@ -822,6 +685,7 @@ window.submitPost = async function() {
             editingPostId = null;
             document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
         } else {
+            // Creating new post
             await addDoc(collection(db, "posts"), {
                 text: val,
                 date: new Date().toLocaleString(),
@@ -909,10 +773,12 @@ window.editPost = function(id, encodedText) {
 // --- ADMIN LOGIC ---
 window.handleGhostClick = function() {
     if(adminMode) { 
+        // Logout silently
         adminMode = false; 
         document.getElementById('admin-editor-zone').style.display='none'; 
         renderFeed();
     } else { 
+        // Show login modal
         document.getElementById('login-modal').style.display='flex'; 
     }
 }
@@ -942,7 +808,6 @@ window.addEventListener('DOMContentLoaded', () => {
     startSlideshow();
     applyLang(currentLang);
     renderFeed();
-    translationCache.clearOld(); // Clear old cache entries on load
 });
 
 // Make functions available globally
