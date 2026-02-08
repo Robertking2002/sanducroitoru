@@ -344,6 +344,14 @@ textarea#postInput {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Progress indicator for translation */
+.translate-progress {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
+    display: none;
+}
 </style>
 </head>
 
@@ -563,6 +571,126 @@ function applyLang(lang) {
     renderFeed();
 }
 
+// --- ENHANCED TRANSLATION FUNCTION (HANDLES LONG TEXTS) ---
+window.handleTranslate = async function(id, encodedText) {
+    const box = document.getElementById(`trans-${id}`);
+    const toggleBtn = box.previousElementSibling;
+    
+    // Toggle visibility
+    if(box.style.display === 'block') { 
+        box.style.display = 'none'; 
+        return; 
+    }
+    
+    // Show loading state
+    box.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loading"></span> Preparing translation...</div>';
+    box.style.display = 'block';
+    
+    try {
+        const originalText = decodeURIComponent(encodedText);
+        let target = currentLang === 'gr' ? 'el' : 'en';
+        
+        // Split text into chunks of maximum 500 characters
+        const chunks = splitTextIntoChunks(originalText, 450); // Using 450 to be safe
+        
+        if (chunks.length === 1) {
+            // If text is short, use single translation
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=ro|${target}`);
+            const data = await res.json();
+            box.textContent = data.responseData.translatedText || "Translation unavailable.";
+        } else {
+            // For long texts, translate chunk by chunk
+            box.innerHTML = `<div style="text-align:center; padding:10px;">
+                <span class="loading"></span> Translating... (0/${chunks.length} chunks)
+                <div class="translate-progress" id="progress-${id}"></div>
+            </div>`;
+            
+            const translatedChunks = [];
+            let completed = 0;
+            
+            // Create progress indicator
+            const progressEl = document.getElementById(`progress-${id}`);
+            
+            // Translate each chunk
+            for (let i = 0; i < chunks.length; i++) {
+                try {
+                    // Update progress
+                    completed++;
+                    progressEl.textContent = `Translating chunk ${completed}/${chunks.length}...`;
+                    progressEl.style.display = 'block';
+                    
+                    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunks[i])}&langpair=ro|${target}`);
+                    const data = await res.json();
+                    
+                    if (data.responseData.translatedText) {
+                        translatedChunks.push(data.responseData.translatedText);
+                    } else {
+                        translatedChunks.push(chunks[i]); // Fallback to original if translation fails
+                    }
+                } catch (error) {
+                    console.error(`Error translating chunk ${i}:`, error);
+                    translatedChunks.push(chunks[i]); // Fallback to original
+                }
+            }
+            
+            // Combine all translated chunks
+            const fullTranslation = translatedChunks.join(' ');
+            
+            // Display the translated text
+            box.innerHTML = `<div class="translated-text">${fullTranslation}</div>`;
+            
+            // Hide progress
+            progressEl.style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error("Translation error:", error);
+        box.textContent = "Error loading translation. The text might be too long.";
+    }
+}
+
+// Helper function to split text into chunks
+function splitTextIntoChunks(text, maxLength) {
+    const chunks = [];
+    let currentChunk = '';
+    
+    // Split by sentences first for better translation quality
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+    
+    for (const sentence of sentences) {
+        if ((currentChunk + sentence).length <= maxLength) {
+            currentChunk += sentence;
+        } else {
+            if (currentChunk) {
+                chunks.push(currentChunk);
+            }
+            // If a single sentence is longer than maxLength, split it by words
+            if (sentence.length > maxLength) {
+                const words = sentence.split(' ');
+                currentChunk = '';
+                for (const word of words) {
+                    if ((currentChunk + ' ' + word).length <= maxLength) {
+                        currentChunk += (currentChunk ? ' ' : '') + word;
+                    } else {
+                        if (currentChunk) {
+                            chunks.push(currentChunk);
+                        }
+                        currentChunk = word;
+                    }
+                }
+            } else {
+                currentChunk = sentence;
+            }
+        }
+    }
+    
+    if (currentChunk) {
+        chunks.push(currentChunk);
+    }
+    
+    return chunks;
+}
+
 // --- FIREBASE POST LOGIC ---
 window.submitPost = async function() {
     const val = document.getElementById('postInput').value;
@@ -665,27 +793,6 @@ window.editPost = function(id, encodedText) {
     editingPostId = id;
     document.getElementById('post-button').textContent = 'Update';
     document.getElementById('postInput').focus();
-}
-
-// --- TRANSLATION LOGIC ---
-window.handleTranslate = async function(id, text) {
-    const box = document.getElementById(`trans-${id}`);
-    if(box.style.display === 'block') { 
-        box.style.display = 'none'; 
-        return; 
-    }
-    
-    box.textContent = "Loading...";
-    box.style.display = 'block';
-    
-    try {
-        let target = currentLang === 'gr' ? 'el' : 'en';
-        const res = await fetch(`https://api.mymemory.translated.net/get?q=${text}&langpair=ro|${target}`);
-        const data = await res.json();
-        box.textContent = data.responseData.translatedText || "Unavailable";
-    } catch { 
-        box.textContent = "Error."; 
-    }
 }
 
 // --- ADMIN LOGIC ---
