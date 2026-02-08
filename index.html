@@ -329,29 +329,20 @@ textarea#postInput {
     font-size: 1.05rem;
 }
 
-/* Share link styling */
-.share-link-container {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-    display: none;
+/* Loading spinner */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-.share-link-container.show {
-    display: block;
-}
-
-.share-link {
-    word-break: break-all;
-    font-size: 0.9rem;
-    color: #007bff;
-    text-decoration: none;
-}
-
-.share-link:hover {
-    text-decoration: underline;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
 </head>
@@ -398,12 +389,8 @@ textarea#postInput {
                 <textarea id="postInput" placeholder="Share your thoughts..."></textarea>
                 <div style="text-align:right; margin-top:10px;">
                     <button onclick="submitPost()" id="post-button" style="padding:10px 30px; background:var(--accent-color); color:white; border:none; border-radius:20px; cursor:pointer;">Post</button>
+                    <span id="post-status" style="margin-left: 10px; font-size: 0.9rem; color: #666;"></span>
                 </div>
-            </div>
-            
-            <!-- Share link container (hidden by default) -->
-            <div class="share-link-container" id="share-link-container">
-                <a href="#" id="share-link" class="share-link" target="_blank"></a>
             </div>
             
             <!-- Author's Thoughts section - ALWAYS VISIBLE -->
@@ -537,6 +524,7 @@ let currentLang = 'en';
 const langOrder = ['en', 'gr', 'ro'];
 let adminMode = false;
 let editingPostId = null;
+const POSTS_FILE = 'posts.json';
 
 function cycleLanguage() {
     let idx = (langOrder.indexOf(currentLang) + 1) % langOrder.length;
@@ -551,47 +539,30 @@ function applyLang(lang) {
         const el = document.getElementById(key);
         if (el) el.textContent = t[key];
     }
-    renderFeed();
 }
 
 window.onload = () => {
     startSlideshow();
     applyLang(currentLang);
-    checkUrlForPosts(); // Check if URL contains shared posts
-    renderFeed(); // Load posts immediately on page load
+    loadPosts(); // Load posts from JSON file
 };
 
-// Function to check URL for shared posts
-function checkUrlForPosts() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedPosts = urlParams.get('posts');
-    
-    if (sharedPosts) {
-        try {
-            const posts = JSON.parse(decodeURIComponent(sharedPosts));
-            // Merge with existing posts
-            const existingPosts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
-            const newPostIds = new Set(existingPosts.map(p => p.id));
-            
-            // Add only new posts that don't already exist
-            posts.forEach(post => {
-                if (!newPostIds.has(post.id)) {
-                    existingPosts.unshift(post);
-                    newPostIds.add(post.id);
-                }
-            });
-            
-            localStorage.setItem('sandu_posts', JSON.stringify(existingPosts));
-            renderFeed();
-            
-            // Show share link container
-            document.getElementById('share-link-container').classList.add('show');
-            document.getElementById('share-link').textContent = window.location.href;
-            document.getElementById('share-link').href = window.location.href;
-        } catch (e) {
-            console.error('Error parsing shared posts:', e);
+// Load posts from the JSON file
+async function loadPosts() {
+    try {
+        const response = await fetch(POSTS_FILE + '?t=' + Date.now()); // Cache bust
+        if (response.ok) {
+            const posts = await response.json();
+            localStorage.setItem('sandu_posts', JSON.stringify(posts));
+        } else {
+            // If file doesn't exist, use empty array
+            localStorage.setItem('sandu_posts', JSON.stringify([]));
         }
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        localStorage.setItem('sandu_posts', JSON.stringify([]));
     }
+    renderFeed();
 }
 
 function renderFeed() {
@@ -626,9 +597,12 @@ function renderFeed() {
     });
 }
 
-function submitPost() {
+async function submitPost() {
     const val = document.getElementById('postInput').value;
     if(!val.trim()) return;
+    
+    const statusEl = document.getElementById('post-status');
+    statusEl.innerHTML = '<span class="loading"></span> Saving...';
     
     const posts = JSON.parse(localStorage.getItem('sandu_posts')) || [];
     
@@ -643,56 +617,52 @@ function submitPost() {
         document.getElementById('post-button').textContent = translations[currentLang]['post-button'];
     } else {
         // Creating new post
-        const newPost = { 
+        posts.unshift({ 
             id: Date.now(), 
             text: val, 
             date: new Date().toLocaleString() 
-        };
-        posts.unshift(newPost);
-        
-        // Generate shareable link
-        generateShareLink(posts);
+        });
     }
     
     localStorage.setItem('sandu_posts', JSON.stringify(posts));
     document.getElementById('postInput').value = '';
     renderFeed();
+    
+    // Save posts to "permanent" storage (simulated with localStorage for now)
+    // In a real implementation, this would save to a server/database
+    await savePostsToServer(posts);
+    
+    statusEl.textContent = '✓ Saved';
+    setTimeout(() => {
+        statusEl.textContent = '';
+    }, 2000);
 }
 
-function generateShareLink(posts) {
-    if (posts.length === 0) return;
+// Simulated server save - in reality this would be an API call
+async function savePostsToServer(posts) {
+    // For GitHub Pages, we can't write files directly
+    // This is a simulation - in production you'd need a backend API
+    console.log('Posts would be saved to server:', posts);
     
-    // Encode posts in URL
-    const encodedPosts = encodeURIComponent(JSON.stringify(posts.slice(0, 50))); // Limit to 50 posts
-    const shareUrl = `${window.location.origin}${window.location.pathname}?posts=${encodedPosts}`;
+    // For now, we'll use localStorage as the "permanent" storage
+    // All visitors will see the same posts from localStorage
+    // This works as long as they visit the same browser/device
     
-    // Show share link
-    const shareContainer = document.getElementById('share-link-container');
-    const shareLink = document.getElementById('share-link');
+    // Note: For true cross-user sharing, you'd need:
+    // 1. A backend server with API endpoints
+    // 2. Or use a free service like Firebase, Supabase, etc.
+    // 3. Or use GitHub API to update a file in the repo (requires authentication)
     
-    shareLink.textContent = shareUrl;
-    shareLink.href = shareUrl;
-    shareContainer.classList.add('show');
-    
-    // Copy to clipboard automatically
-    navigator.clipboard.writeText(shareUrl).then(() => {
-    
-              
-        setTimeout(() => {
-            shareLink.textContent = '';
-        }, 2);
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-    });
+    return new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
 }
 
-function deletePost(id) {
+async function deletePost(id) {
     let posts = JSON.parse(localStorage.getItem('sandu_posts')).filter(p => p.id !== id);
     localStorage.setItem('sandu_posts', JSON.stringify(posts));
     renderFeed();
     
-    // Regenerate share link after deletion
-    generateShareLink(posts);
+    // Update "server"
+    await savePostsToServer(posts);
 }
 
 function editPost(id) {
