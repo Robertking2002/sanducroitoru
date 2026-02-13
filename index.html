@@ -265,16 +265,22 @@ textarea#postInput {
 
 <body>
 
-<audio id="myAudio" src="background.mp3" loop playsinline></audio>
+<audio id="myAudio" loop playsinline>
+  <source src="background.mp3" type="audio/mpeg">
+</audio>
 
 <script>
   function startGlobalAudio() {
     const audio = document.getElementById('myAudio');
     if (audio) {
       audio.volume = 0.2; 
-      audio.play().catch(() => {});
+      console.log("Attempting to play audio...");
+      audio.play()
+        .then(() => console.log("Audio playing successfully!"))
+        .catch((err) => console.log("Playback failed: ", err));
     }
   }
+
   ['click', 'touchstart', 'mousedown'].forEach(eventType => {
     document.addEventListener(eventType, startGlobalAudio, { once: true });
   });
@@ -587,4 +593,5 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
