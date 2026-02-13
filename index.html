@@ -271,28 +271,34 @@ textarea#postInput {
 </audio>
 
 <script>
-  function startGlobalAudio() {
-    const audio = document.getElementById('myAudio');
-    if (!audio) return;
+  let interactionHappened = false;
 
-    // Check if the file is actually ready
+  function attemptPlay() {
+    const audio = document.getElementById('myAudio');
+    interactionHappened = true; // User has done their part
+
     if (audio.readyState >= 2) {
-      playAudio(audio);
+      // If data is already there, play immediately
+      performPlay(audio);
     } else {
-      console.log("File not ready, waiting for data...");
-      audio.addEventListener('canplaythrough', () => playAudio(audio), { once: true });
+      // If data isn't there yet, tell the audio to play the MOMENT it arrives
+      console.log("Data still loading... setting auto-play trigger.");
+      audio.addEventListener('canplaythrough', () => {
+        if(interactionHappened) performPlay(audio);
+      }, { once: true });
     }
   }
 
-  function playAudio(audio) {
-    audio.volume = 0.3; 
+  function performPlay(audio) {
+    audio.volume = 0.3;
     audio.play()
-      .then(() => console.log("Success: Audio is now playing!"))
-      .catch(err => console.log("Playback error: ", err));
+      .then(() => console.log("Audio started successfully!"))
+      .catch(err => console.log("Final play attempt failed:", err));
   }
 
+  // Listen for the first interaction
   ['click', 'touchstart', 'mousedown'].forEach(eventType => {
-    document.addEventListener(eventType, startGlobalAudio, { once: true });
+    document.addEventListener(eventType, attemptPlay, { once: true });
   });
 </script>
 
@@ -603,6 +609,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
