@@ -273,13 +273,22 @@ textarea#postInput {
 <script>
   function startGlobalAudio() {
     const audio = document.getElementById('myAudio');
-    if (audio) {
-      audio.volume = 0.2; 
-      console.log("Attempting to play audio...");
-      audio.play()
-        .then(() => console.log("Audio playing successfully!"))
-        .catch((err) => console.log("Playback failed: ", err));
+    if (!audio) return;
+
+    // Check if the file is actually ready
+    if (audio.readyState >= 2) {
+      playAudio(audio);
+    } else {
+      console.log("File not ready, waiting for data...");
+      audio.addEventListener('canplaythrough', () => playAudio(audio), { once: true });
     }
+  }
+
+  function playAudio(audio) {
+    audio.volume = 0.3; 
+    audio.play()
+      .then(() => console.log("Success: Audio is now playing!"))
+      .catch(err => console.log("Playback error: ", err));
   }
 
   ['click', 'touchstart', 'mousedown'].forEach(eventType => {
@@ -594,6 +603,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
