@@ -47,6 +47,63 @@ h1, h2, .nav-btn, .user-label, .section-header {
   width: 180px;
  }
 
+
+
+.social-container {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    padding-left: 15px;
+    border-left: 1px solid rgba(255,255,255,0.2); /* Same line as languages */
+}
+
+.social-link {
+    display: flex;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.social-link:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+.social-icon {
+    width: 22px; /* Slightly larger than flags for better visibility */
+    height: 22px;
+    
+}
+
+
+
+
+.audio-toggle {
+    position: fixed;
+    top: 15px;
+    right: 25px;
+    z-index: 1100;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 30px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.audio-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+
+
+
 /* --- HEADER & NAVIGATION --- */
 header {
     position: fixed;
@@ -265,6 +322,9 @@ textarea#postInput {
 
 <body>
 
+<button class="audio-toggle" onclick="toggleMute()" id="mute-btn">
+    <span id="mute-icon">🔊</span></button>
+
 <audio id="myAudio" loop playsinline preload="auto">
     <source src="background.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -335,6 +395,11 @@ textarea#postInput {
                 <img src="https://flagcdn.com/w40/gr.png" class="flag-icon">
             </button>
         </div>
+     <div class="social-container">
+        <a href="https://www.instagram.com/YOUR_USERNAME" target="_blank" class="social-link">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" class="social-icon" alt="Instagram">
+        </a>
+    </div>
     </nav>
 </header>
 
@@ -400,13 +465,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, updateDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBCwpfHmLZjDV5l2W-TKnN57K2ZqP5jg0c",
-  authDomain: "sandu-croitoru.firebaseapp.com",
-  projectId: "sandu-croitoru",
-  storageBucket: "sandu-croitoru.firebasestorage.app",
-  messagingSenderId: "998140149044",
-  appId: "1:998140149044:web:8b1665b17fd320d44df961",
-  measurementId: "G-VKQ3JVG7V2"
+    apiKey: "AIzaSyBCwpfHmLZjDV5l2W-TKnN57K2ZqP5jg0c",
+    authDomain: "sandu-croitoru.firebaseapp.com",
+    projectId: "sandu-croitoru",
+    storageBucket: "sandu-croitoru.firebasestorage.app",
+    messagingSenderId: "998140149044",
+    appId: "1:998140149044:web:8b1665b17fd320d44df961",
+    measurementId: "G-VKQ3JVG7V2"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -443,34 +508,38 @@ const translations = {
     }
 };
 
-// --- CLOUD TRANSLATION LOGIC ---
 window.handleTranslate = async function(id, encodedText) {
     const box = document.getElementById(`trans-${id}`);
     if(box.style.display === 'block') { box.style.display = 'none'; return; }
     
-    box.innerHTML = '<span class="loading"></span> Connecting to cloud...';
+    box.innerHTML = '<span class="loading"></span> Checking cloud cache...';
     box.style.display = 'block';
 
     const originalText = decodeURIComponent(encodedText);
     const targetLang = currentLang === 'gr' ? 'el' : 'en';
 
     try {
-        // 1. Check Cloud Cache (Firestore)
+        // 1. Search Cloud Cache (Firestore)
         const q = query(collection(db, "translations_cache"), 
                         where("original", "==", originalText), 
                         where("lang", "==", targetLang));
+        
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
+            // Found it! No need to call the API.
             const cachedData = querySnapshot.docs[0].data();
             box.innerHTML = `${cachedData.translated} <div class="cache-indicator">✓ Cloud Sync</div>`;
             return;
         }
 
-        // 2. Call API (If not in cloud)
+        // 2. Call API (If not found in cloud)
+        box.innerHTML = '<span class="loading"></span> Generating new translation...';
         const translation = await googleTranslate(originalText, 'ro', targetLang);
 
-        if (translation && translation !== originalText) {
+        // Check if API returned a valid translation or the "Limit" message
+        if (translation && !translation.includes("Sorry for the inconvenience")) {
+            // 3. Save to Cloud for future users
             await addDoc(collection(db, "translations_cache"), {
                 original: originalText,
                 translated: translation,
@@ -479,31 +548,36 @@ window.handleTranslate = async function(id, encodedText) {
             });
             box.innerHTML = translation;
         } else {
-            throw new Error("API Limit");
+            throw new Error("API Limit reached");
         }
     } catch (e) {
+        // Fallback: Show the countdown timer if API fails and not in cache
         const now = new Date();
         const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
         const diff = tomorrow - now;
         const h = Math.floor(diff / 3600000);
         const m = Math.floor((diff % 3600000) / 60000);
-        box.innerHTML = `<span style="color:#ff4444;">Sorry for the inconvenience, translation unavailable! Next translation available in ${h} hours ${m} minutes!</span>`;
+        box.innerHTML = `<span style="color:#ff4444;">API Limit reached. New translation available in ${h}h ${m}m. <br><small> </small></span>`;
     }
 };
 
-// Main API Translation
 async function googleTranslate(text, sourceLang, targetLang) {
     try {
         const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`);
         const data = await response.json();
-        return data.responseData?.translatedText || text;
+        const result = data.responseData?.translatedText;
+        // MyMemory sometimes returns error messages inside the successful JSON response
+        if (result && result.includes("INCONVENIENCE")) return null;
+        return result || null;
     } catch { return null; }
 }
 
+// --- TAB & CONTENT LOGIC ---
 window.setLanguage = function(lang) {
     currentLang = lang;
     document.querySelectorAll('.lang-btn-static').forEach(b => b.classList.remove('active'));
-    document.getElementById(`btn-${lang}`).classList.add('active');
+    const btn = document.getElementById(`btn-${lang}`);
+    if(btn) btn.classList.add('active');
     applyLang(lang);
 };
 
@@ -516,11 +590,11 @@ function applyLang(lang) {
     renderFeed();
 }
 
-// --- REST OF FUNCTIONALITY ---
 const slides = ['Background1.jpg', 'Background2.jpg', 'Background3.jpg'];
 let slideIdx = 0;
 function startSlideshow() {
     const hero = document.getElementById('hero-slideshow');
+    if(!hero) return;
     hero.style.backgroundImage = `url('${slides[0]}')`;
     setInterval(() => {
         slideIdx = (slideIdx + 1) % slides.length;
@@ -534,7 +608,6 @@ window.showTab = function(tabId, btn) {
     document.getElementById(tabId).classList.add('active');
     btn.classList.add('active');
     window.scrollTo(0,0);
-    // Audio trigger on nav
     const audio = document.getElementById('myAudio');
     if(audio && audio.paused) { audio.volume = 0.3; audio.play().catch(()=>{}); }
 };
@@ -563,7 +636,6 @@ window.renderFeed = async function() {
             <div class="translated-content" id="trans-${d.id}"></div>
             <div class="admin-buttons" style="display:${adminMode?'block':'none'}">
                 <button class="delete-btn" onclick="deletePost('${d.id}')">Delete</button>
-                <button class="edit-btn" onclick="editPost('${d.id}', '${encodeURIComponent(p.text)}')">Edit</button>
             </div>`;
         feed.appendChild(div);
     });
@@ -576,12 +648,10 @@ window.attemptLogin = () => {
         adminMode = true;
         document.getElementById('admin-editor-zone').style.display='block';
         closeLogin(); renderFeed();
-    } else { closeLogin(); }
+    } else { alert("Access Denied"); closeLogin(); }
 };
 
-window.closeLogin = () => {
-    document.getElementById('login-modal').style.display='none';
-};
+window.closeLogin = () => { document.getElementById('login-modal').style.display='none'; };
 
 window.handleGhostClick = () => {
     if(adminMode) { adminMode=false; document.getElementById('admin-editor-zone').style.display='none'; renderFeed(); }
@@ -591,12 +661,7 @@ window.handleGhostClick = () => {
 window.submitPost = async () => {
     const val = document.getElementById('postInput').value;
     if(!val.trim()) return;
-    if(editingPostId) {
-        await updateDoc(doc(db, "posts", editingPostId), { text: val, timestamp: Date.now() });
-        editingPostId = null;
-    } else {
-        await addDoc(collection(db, "posts"), { text: val, date: new Date().toLocaleString(), timestamp: Date.now() });
-    }
+    await addDoc(collection(db, "posts"), { text: val, date: new Date().toLocaleString(), timestamp: Date.now() });
     document.getElementById('postInput').value = '';
     renderFeed();
 };
@@ -606,11 +671,23 @@ window.addEventListener('DOMContentLoaded', () => {
     applyLang('en');
     renderFeed();
 });
+
+
+
+window.toggleMute = function() {
+    const audio = document.getElementById('myAudio');
+    const btnIcon = document.getElementById('mute-icon');
+    const btnText = document.getElementById('mute-text');
+
+    if (audio.muted) {
+        audio.muted = false;
+        btnIcon.textContent = "🔊";
+    } else {
+        audio.muted = true;
+        btnIcon.textContent = "🔇";
+    }
+};
+
 </script>
 </body>
 </html>
-
-
-
-
-
