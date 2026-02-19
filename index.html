@@ -512,52 +512,57 @@ window.handleTranslate = async function(id, encodedText) {
     const box = document.getElementById(`trans-${id}`);
     if(box.style.display === 'block') { box.style.display = 'none'; return; }
     
-    box.innerHTML = '<span class="loading"></span> Checking cloud cache...';
     box.style.display = 'block';
-
-    const originalText = decodeURIComponent(encodedText);
+    const originalText = decodeURIComponent(encodedText).trim();
     const targetLang = currentLang === 'gr' ? 'el' : 'en';
+    
+    // Create a unique key for Local Storage
+    const localKey = `cache_${targetLang}_${originalText.substring(0, 20)}`;
 
     try {
-        // 1. Search Cloud Cache (Firestore)
-        const q = query(collection(db, "translations_cache"), 
-                        where("original", "==", originalText), 
-                        where("lang", "==", targetLang));
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            // Found it! No need to call the API.
-            const cachedData = querySnapshot.docs[0].data();
-            box.innerHTML = `${cachedData.translated} <div class="cache-indicator">✓ Cloud Sync</div>`;
+        // STEP 1: Check Local Browser Cache (Instant)
+        const localData = localStorage.getItem(localKey);
+        if (localData) {
+            box.innerHTML = `${localData} <div class="cache-indicator" style="color:#007bff;">✓ Local Cache</div>`;
             return;
         }
 
-        // 2. Call API (If not found in cloud)
-        box.innerHTML = '<span class="loading"></span> Generating new translation...';
+        // STEP 2: Check Cloud Cache (Firestore)
+        box.innerHTML = '<span class="loading"></span> Checking Cloud...';
+        const q = query(collection(db, "translations_cache"), 
+                        where("original", "==", originalText), 
+                        where("lang", "==", targetLang));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const cloudData = querySnapshot.docs[0].data().translated;
+            // Save to Local for next time before showing
+            localStorage.setItem(localKey, cloudData);
+            box.innerHTML = `${cloudData} <div class="cache-indicator">✓ Synced from Cloud</div>`;
+            return;
+        }
+
+        // STEP 3: API Call (Only if Local and Cloud both fail)
+        box.innerHTML = '<span class="loading"></span> API Translating...';
         const translation = await googleTranslate(originalText, 'ro', targetLang);
 
-        // Check if API returned a valid translation or the "Limit" message
         if (translation && !translation.includes("Sorry for the inconvenience")) {
-            // 3. Save to Cloud for future users
-            await addDoc(collection(db, "translations_cache"), {
+            // STEP 4: Save to BOTH Local and Cloud
+            localStorage.setItem(localKey, translation); // Local Save
+            
+            await addDoc(collection(db, "translations_cache"), { // Cloud Move
                 original: originalText,
                 translated: translation,
                 lang: targetLang,
                 timestamp: Date.now()
             });
+            
             box.innerHTML = translation;
         } else {
-            throw new Error("API Limit reached");
+            throw new Error("Limit");
         }
     } catch (e) {
-        // Fallback: Show the countdown timer if API fails and not in cache
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const diff = tomorrow - now;
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        box.innerHTML = `<span style="color:#ff4444;">API Limit reached. New translation available in ${h}h ${m}m. <br><small> </small></span>`;
+        box.innerHTML = `<span style="color:#ff4444;">API Limit reached. Cloud & Local sync failed. Try again tomorrow.</span>`;
     }
 };
 
@@ -566,12 +571,11 @@ async function googleTranslate(text, sourceLang, targetLang) {
         const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`);
         const data = await response.json();
         const result = data.responseData?.translatedText;
-        // MyMemory sometimes returns error messages inside the successful JSON response
-        if (result && result.includes("INCONVENIENCE")) return null;
+        // If the API returns the "Limit" string, treat it as an error
+        if (result && (result.includes("INCONVENIENCE") || result.includes("MYMEMORY WARNING"))) return null;
         return result || null;
     } catch { return null; }
 }
-
 // --- TAB & CONTENT LOGIC ---
 window.setLanguage = function(lang) {
     currentLang = lang;
@@ -691,4 +695,5 @@ window.toggleMute = function() {
 </script>
 </body>
 </html>
+
 
